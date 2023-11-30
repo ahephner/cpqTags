@@ -1,0 +1,236 @@
+.header{
+    font-weight: bold;
+    background-color: #d9d9d9;
+}
+
+.hover{
+    cursor: pointer;
+}
+
+.ro{
+    margin-left: 30%;
+    font-size: small;
+}
+.align{
+    display: inline-flex;
+}
+.up{
+    padding-top: 1.5%;
+}
+.lastPaid{
+    cursor: pointer;
+    margin-top:10%;
+    margin-left: 54%;
+}
+.docDate{
+    cursor: pointer;
+    font-size: smaller;
+    margin-left: 44%; 
+}
+
+.backSide{
+    cursor: pointer;
+    margin-top: 15%;
+    margin-left:20%;
+    font-size:12px;
+}
+.backSide2{
+    cursor: pointer;
+    margin-top: 20%;
+    margin-left:35%;
+    font-size:12px;
+}
+.THIS .spins::after {
+    position: absolute;
+    content: 'Please wait while loading';
+    width: 100%;
+    text-align: center;
+    top: calc(50% + 3em);
+    font-weight: bold;
+}
+.price{
+    margin-left: 35%;
+    width: 113%;
+}
+
+.tooLow{
+    -webkit-text-fill-color: #f54049;
+}
+
+.warn{
+    -webkit-text-fill-color: #edd11a;
+}
+
+.goodPrice{
+    -webkit-text-fill-color: black;
+}
+.totals{
+    display: inline-block;
+    margin-left: 15px;
+    font-weight: bold;
+}
+.changedProduct1{
+    color: #f54049;
+    margin-top: 1%;
+    margin-left: 5%;
+    font-weight: bold;
+}
+
+.qtyMark{
+    width: 85%;
+    
+}
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 120px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    bottom: 150%;
+    left: 50%;
+    margin-left: -60px;
+  }
+  
+  .tooltip .tooltiptext::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: black transparent transparent transparent;
+  }
+  
+  .tooltip:hover .tooltiptext {
+    visibility: visible;
+  }
+  .color{
+    --slds-c-input-color-background: #ff8080;
+   
+  }
+  .noColor{
+    --slds-c-input-color-background: white;
+   
+  }
+
+  .manLine{
+      width: 90%; 
+      margin-left: 5%;
+  }
+  .qtyDiv{
+    padding-left: 3.2%;
+}
+  .arrBtn{
+    margin-top: 1.5%;
+    padding-left: 5px;
+  }
+  .moveBoxUp{
+    animation-name: addBorderBoxUp;
+    animation-duration: 1s;
+
+  }
+  @keyframes addBorderBoxUp {
+      from {border-style: solid; border-color:black}
+      to {}
+    }
+    .moveBoxDown{
+        animation-name: addBorderBoxDown;
+        animation-duration: 1s;
+    
+      }
+  @keyframes addBorderBoxDown {
+      from {border-style: solid; border-color:red}
+      to {}
+    }
+  .manQ{
+    margin-left:-2%; 
+  }
+.changedProduct{
+    color: #313131; 
+    text-align: center;
+    margin-top: 1%;
+    margin-left: 5%;
+    font-size: medium;
+    animation: colorchange 20s infinite alternate; 
+}
+
+.bottomChangedProduct{
+    display: inline-block;
+    margin-left: 15%;
+}
+@keyframes colorchange{
+    0%{
+      color: red;  
+    }
+    20%{
+        color: orangered;
+    }
+    40%{
+        color: orange;
+    }
+    60%{
+        color: #fdb42d;
+    }
+    80%{
+        color: orange
+    }
+    100%{
+        color:orangered; 
+    }
+}
+
+
+.innerInfo{
+    position: absolute;
+      font-size: 14px;
+      background: #333;
+      color: #ffffff;
+      padding: 5px 8px;
+      border-radius: 5px;
+      box-shadow: 0 10px 10px rgba(0, 0, 0, 0.1);
+      opacity: 0;
+      pointer-events: none;
+      transition: 150ms transform;
+      transform-origin:bottom center;
+      bottom: 150%;
+      left: 50%;
+      margin-left: -60px;
+        
+    }
+    .hasInfo .innerInfo::before {
+      position: absolute;
+      content: "";
+      height: 8px;
+      width: 8px;
+      background: #333;
+      bottom: -3px;
+      left: 50%;
+      transform: translate(-50%) rotate(45deg);
+      transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+    .hasInfo:hover .innerInfo{
+        opacity:1;
+        /* transform: translateX(-120px) translateY(-30%); */
+        visibility: visible;
+        width: max-content;
+        pointer-events: auto;
+    }
+    
+    .hasInfo:hover{
+        cursor: pointer;
+    }
+    .hasInfo{
+        position: relative;
+        display: inline-flex; 
+    }
+
+/* lightning-button.sortBTN{
+    --sds-c-button-brand-color-background: #b1b1b4c5;
+    --slds-c-button-outline-brand-color-background-active: #b1b1b4c5;
+    --sds-c-button-text-color: #000508;
+} */

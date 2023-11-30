@@ -1,0 +1,97 @@
+<template>
+    <div class='slds-grid header'>
+
+                
+        <div class='slds-col slds-size_7-of-12 slds-align_absolute-center'>
+            <p class='header'>Promo Info</p>
+        </div>
+
+        <!-- <div class="slds-col slds-size_4-of-12 slds-align_absolute-center">
+            <p class='header'>Products</p>
+        </div> -->
+        <div class="slds-col slds-size_5-of-12 slds-align_absolute-center">
+            <p class='header'>Products</p>
+        </div>
+
+    
+    </div>
+    <template if:false={loaded}>
+        <lightning-spinner 
+            alternative-text="Loading" 
+            size="large"></lightning-spinner>
+    </template>
+    <template if:true={loaded}>
+        <!-- <h2>Working on promos. Nothing will populate use dev console.</h2> -->
+        <lightning-layout multiple-rows="true">
+            <template if:false={loading} for:each={data} for:item='item' for:index="index">
+                <lightning-layout-item size="12" key={item.Id} class="slds-box slds-p-around_none 
+                    slds-m-horizontal_none pcCard slds-m-top_small" 
+                    name={item.Id}>
+                    <div class="slds-grid card slds-m-left_small">
+    <!-- Promo INFO -->
+                    <template if:false={testing}>
+                        <div class="slds-col slds-size_7-of-12">
+                            <div class="btn-name slds-text-heading_medium">
+                                <div class="btn slds-m-right_medium">
+                                    <lightning-button-icon icon-name={item.btnName}  variant={item.btnVariant} size="small" 
+                                    alternative-text="add" name={item.Id} onclick={addPromo} data-label={item.Promo_Discount__c}></lightning-button-icon>
+                                </div>
+                                    {item.Name} 
+                                </div>
+                            <div class="expDate">
+                                Expires: {item.experDate} -&nbsp; <span class={item.dayClass}>{item.experDays} days left</span> 
+                            </div>
+                            <div class="commentHeader">
+                                <b>Comments:</b>
+                            </div>
+                            <div class="comments">
+                                
+                                {item.Description__c}
+                            </div>
+                        </div>
+    <!-- Product Info here -->
+                        <div class="slds-col slds-size_5-of-12 slds-align_absolute-center">
+                            <template if:false={loading} for:each={item.prodNames} for:item='i'>
+                                <ul key={i.id}>
+                                    <li>{i.name}</li>
+                                </ul>
+                            </template>
+                            
+                        </div>
+                    </template>
+                    <template if:true={testing}>
+                        <div class="slds-col slds-size_7-of-12">
+                            <div class="btn-name slds-text-heading_medium">
+                                <div class="btn slds-m-right_medium">
+                                    <lightning-button-icon icon-name={item.btnName}  variant={item.btnVariant} size="small" 
+                                    alternative-text="add" name={item.Id} onclick={addPromo} data-label={item.Promo_Discount__c}></lightning-button-icon>
+                                </div>
+                                    {item.Search_Label__r.Name} 
+                                </div>
+                            <div class="expDate">
+                                Expires: {item.experDate} -&nbsp; <span class={item.dayClass}>{item.experDays} days left</span> 
+                            </div>
+                            <div class="commentHeader">
+                                <b>Comments:</b>
+                            </div>
+                            <div class="comments">
+                                
+                                {item.Search_Label__r.Description__c}
+                            </div>
+                        </div>
+    <!-- Product Info here -->
+                        <div class="slds-col slds-size_5-of-12 slds-align_absolute-center">
+                            <template if:false={loading} for:each={item.prodNames} for:item='i'>
+                                <ul key={i.id}>
+                                    <li>{i.name}</li>
+                                </ul>
+                            </template>
+                            
+                        </div>
+                    </template>
+                    </div>
+                </lightning-layout-item>
+            </template>
+        </lightning-layout>
+    </template>
+</template>

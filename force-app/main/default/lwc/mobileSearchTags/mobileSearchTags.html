@@ -1,0 +1,104 @@
+<template>
+    <!--Here is the filters page  -->
+    <template if:true={openFilters}>
+        <c-mobile-search-filters 
+                                onfilterchange={updateFilters}
+                                onclosefilter={closeFilter}>
+        </c-mobile-search-filters>
+    </template>    
+     <template if:true={loaded}>
+         <template if:false={openFilters}>
+        <div class='slds-grid slds-wrap'>
+            <div class='slds-col slds-size_1-of-2'>
+            
+                    <lightning-input
+                    name="enter-search"
+                    label="Search For Products"
+                    type="search"
+                ></lightning-input>
+            
+        </div>
+    <!-- button group -->
+            <div class='slds-col slds-size_1-of-3 slds-m-left_x-small slds-m-top_small'>
+                <div class="slds-p-around_medium lgc-bg">
+                    <lightning-button-group>
+                        <!-- search -->
+                        <lightning-button label="Search" variant='brand' onclick={handleSearch}></lightning-button>
+                        <!-- filter button -->
+                        <lightning-button-icon variant="border-filled"
+                        icon-name="utility:filterList" onclick={addFilters} ></lightning-button-icon>
+                    </lightning-button-group>
+    
+                </div>
+            </div>    
+    <!--Display chosen filters-->
+    <template if:true={showFilters}>
+        <div class='slds-col slds-size_1-of-3 slds-m-left_x-small slds-m-top_x-small'>
+            <p>Filters applied:</p>
+            <lightning-pill-container items={items} onitemremove={removePill}></lightning-pill-container>
+           </div>    
+    </template>
+    
+            <!-- search Results -->
+        <div class='slds-col slds-size_1-of-1 outer'>
+        <div class='slds-scrollable_y target searchRes'>
+            <lightning-layout multiple-rows="true">
+                <template for:each={prod} for:item='x'>
+                    <lightning-layout-item size="12" key={x.Id} name={x.ProductCode} class="slds-box slds-p-around_none 
+                    slds-m-top_x-small slds-m-bottom_medium slds-m-horizontal_none">
+                    <div class='slds-grid slds-wrap'>
+                        <div class='slds-col slds-size_1-of-1 slds-m-left_x-small'>
+                                <!--inner grid-->
+                            <div class='slds-grid'>
+                                <div class='slds-col slds-size_10-of-12'>
+                                    <div class=" slds-m-bottom_medium">
+                                        <p>{x.Name}</p>
+                                        <p class="prodCode slds-p-top_xxx-small">{x.ProductCode}</p>
+                                    </div>
+                                </div>
+                                <div class='slds-col slds-size_1-of-12 slds-m-left_x-small slds-m-top_x-small'>
+                                    <figure class='slds-float_right'>
+                                        <lightning-icon icon-name={x.icon} size="small" name={x.Id} 
+                                            onclick={findProduct} alternative-text="Add Product" title="Add Products"></lightning-icon>
+                                                    <figcaption>{x.title}</figcaption>
+                                    </figure>
+                                </div> 
+                            </div> 
+                        <!--finish inner grid -->
+                        </div>
+    
+                    <!-- Unit Price -->
+                            <div class='slds-col slds-size_1-of-3 slds-m-left_x-small'>
+                                <lightning-input value={x.Floor_Price__c} type='number' formater='currency' step="0.01"
+                                                 label='Floor Price' readonly></lightning-input>                                            
+                            </div>
+                            <div class='slds-col slds-size_1-of-3 slds-m-left_x-small'>
+                            <lightning-input value={x.Product__r.Floor_Type__c} type='text'
+                                             label='Floor Type' readonly></lightning-input>
+                            </div>
+                            <div class='slds-col slds-size_1-of-3 slds-m-left_x-small'>
+                                <lightning-input value={x.onhand} type="number"
+                                                 label='Qty on Hand' readonly></lightning-input>
+                            </div>
+                            <div class='slds-col slds-size_1-of-3 slds-m-left_x-small'>
+                                <lightning-input value={x.status} type="text"
+                                                 label='Product Status' readonly></lightning-input>
+                            </div>
+                    </div>
+                </lightning-layout-item>
+    
+                </template>
+            </lightning-layout>
+            </div>
+            <!--dont let first results push view port-->
+        </div>
+        </div>
+        <footer class="slds-modal__footer slds-align_absolute-center">
+            <button class="slds-button slds-button_brand" onclick={handleDone} title="Done">Done</button>
+        </footer>
+        </template>
+    </template>
+        <template if:false={loaded}>
+            <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+        </template>
+    </template>

@@ -1,0 +1,372 @@
+<template>
+    <lightning-card  variant="Narrow"  title="Selected Products -TAGS" icon-name="utility:cart">
+        <template if:false={loaded}>
+            <lightning-spinner 
+                alternative-text="Loading" 
+                size="large"></lightning-spinner>
+        </template>
+    <template if:true={loaded}>
+        <template if:false={wasSubmitted}>
+        <div class='slds-grid'>
+            <div class='slds-col slds-size_7-of-12'>
+                <template if:true={unsavedProducts}>
+                    <p class="changedProduct">You have unsaved changes!</p>
+                </template>
+            </div>
+
+            <span class='slds-col slds-size_5-of-12 slds-m-bottom_x-small'>
+                <div class='slds-float_right slds-m-right_medium'>
+                    <!-- <lightning-button-group> -->
+                <div class="align">
+                <!-- Switch Warehouse inventories -->
+                    <lightning-combobox
+                    name="warehouse"
+                    label="Inventory Reference"
+                    value={warehouse}
+                    options={warehouseOptions}
+                    onchange={checkInventory} ></lightning-combobox>
+                    <lightning-button class='slds-m-top_large' variant="Neutral" label="Add Product" title="priceBook" onclick={openProdSearch}></lightning-button> 
+                    <lightning-button class='slds-m-top_large' variant="brand" label="Add Split Ship" title="splitShip" onclick={addShips}></lightning-button>
+                    <lightning-button class='slds-m-top_large sortBTN' variant="brand" label={sortBtnText} title="order" onclick={handleSort}></lightning-button> 
+                    <!-- <lightning-button class='slds-m-top_large' variant="brand" label="Manual Line" title="manLine" onclick={addManualLine}></lightning-button> -->
+                    <!-- <lightning-button class='slds-m-top_large' variant="Neutral" label="Get Pricing" title="pricing" onclick={initPriceCheck}></lightning-button>  -->
+                </div>
+                    <!-- </lightning-button-group>    -->
+                </div>
+            </span>
+            <!-- <span class='slds-col slds-size_2-of-12 slds-m-bottom_x-small'>
+                <div class='slds-m-top_large slds-m-right_large'>  
+                    <lightning-button variant="Neutral" label="Add Product" title="priceBook" onclick={openProdSearch}></lightning-button>
+                </div>
+            </span> -->
+        </div>
+    </template>
+    <template if:true={wasSubmitted}>
+        <div class='slds-align_absolute-center'>
+            <p class="changedProduct">Quote has been submitted you can clone this!</p>    
+        </div>
+    </template>
+        <template if:true={prodFound}>
+            <!-- Set Table Headers here -->
+            <div class='slds-grid header'>
+
+                
+                <div class='slds-col slds-size_2-of-12 slds-align_absolute-center'>
+                    <p class='header'>Product Name</p>
+                </div>
+  
+                <div class="slds-col slds-size_1-of-12 slds-align_absolute-center">
+                    <p class='header'>Qty</p>
+                </div>
+                <div class="slds-col slds-size_1-of-12 slds-align_absolute-center">
+                    <p class='header'>Price</p>
+                </div>
+                <div class="slds-col slds-size_1-of-12 slds-align_absolute-center ">
+                    <p class='header'>Last Paid</p>
+                </div>
+                <!-- Hide from prying -->
+                <template if:false={pryingEyes}>
+                <div class="slds-col slds-size_1-of-12 slds-align_absolute-center" onclick={hideMarge}>
+                    <p class='header hover'>Last Margin</p>
+                </div>
+                        <div class="slds-col slds-size_1-of-12 slds-align_absolute-center" onclick={hideMarge} >
+                            <p class='header hover'>Margin %</p>
+                        </div>
+                    </template>
+                    <template if:true={pryingEyes}>
+                        <div class="slds-col slds-size_1-of-12 slds-align_absolute-center" onclick={hideMarge}>
+                            <p class='header hover'>X</p>
+                        </div>
+                        <div class="slds-col slds-size_1-of-12 slds-align_absolute-center" onclick={hideMarge} >
+                            <p class='header hover'>X</p>
+                        </div>
+                    </template>
+                <div class="slds-col slds-size_1-of-12 slds-align_absolute-center">
+                    <p class='header'>Avail.</p>
+                </div>
+                <div class="slds-col slds-size_1-of-12 slds-align_absolute-">
+                    <p class='header'>Total</p>
+                </div>
+    <!-- Here is the Sort Order Start -->
+            <template if:true={showSort}>
+                <div class="slds-col slds-size_2-of-12 slds-align_absolute-center">
+                    <p class='header'>Order On PDF</p>
+                </div>
+            </template>  
+            <template if:false={showSort}>
+                <div class="slds-col slds-size_2-of-12 slds-align_absolute-center">
+                    <p class='header'>Comment</p>
+                </div>
+            </template>
+            
+            </div>
+            <!--Table cells here-->
+            <div class='slds-grid'>
+                <div class='slds-col slds-size_1-of-1'>
+                <template for:each={selection} for:item="sp">
+                    <div key={sp.ProductCode} class='slds-m-horizontal_xx-small slds-m-bottom_x-small slds-grid' data-box={sp.ProductCode}>
+                        <!-- <div class="slds-col slds-size_1-of-12 slds-align_absolute-center">
+                            <lightning-icon icon-name="utility:close" name={sp.Id} size='small' class='hover'
+                            alternative-text='remove' title="Remove" onclick={removeProd} ></lightning-icon>
+                        </div> -->
+                        <div class="slds-col slds-size_2-of-12  slds-m-top_large" >
+                            <lightning-icon icon-name="utility:close" name={sp.ProductCode} size='x-small' class='hover '
+                            alternative-text='remove' title="Remove" onclick={removeProd} ></lightning-icon>
+                            <div class='pName  hasInfo'>{sp.name}  
+                                <!-- <lightning-helptext content={sp.tips}></lightning-helptext> -->
+                                 
+                                    
+                                        <div class="innerInfo">
+                                            <p>{sp.name}</p>
+                                            <p>{sp.ProductCode}</p>
+                                            <p>Pallet Qty: {sp.palletConfig}</p>
+                                            <p>SGN: {sp.sgn}</p>
+                                            <br/>
+                                            <p>Cost: ${sp.displayCost}</p>
+                                            <p>Company Last Paid: ${sp.companyLastPaid}</p>
+                                            <p>Sold Last 30 Days: {sp.lastThirty}</p>
+                                            <br/>
+                                            <p>Last Quoted Price: ${sp.lastQuoteAmount}</p>
+                                            <p>Last Quoted Margin: {sp.lastQuoteMargin}%</p>
+                                            <p>Last Quoted Date: {sp.lastQuoteDate}</p>
+                                        </div>
+                                    </div>        
+                        </div>
+
+        <!-- Show Manual Inputs -->
+                        
+                        <!-- user qty -->
+                        <div class="slds-col slds-size_1-of-12 qtyDiv">
+                            <div>
+                                <lightning-input type="number" class='qtyMark' data-tar={sp.ProductCode} name={sp.ProductCode} min='1'
+                                value={sp.Quantity} onchange={newQTY} step="0.01"></lightning-input>
+                            </div>
+                        </div>
+                        <!-- user price -->
+                        <div class="slds-col slds-size_1-of-12 slds-m-right_x-large">
+                            <div data-id={sp.ProductCode} >
+                            <lightning-input class='price' type="number"  
+                                        label="" name={sp.ProductCode} 
+                                        value={sp.UnitPrice} onchange={newPrice} 
+                                        formatter="currency" step="0.01"
+                                        read-only={sp.agency} ></lightning-input>
+                                    </div>
+                        </div>
+                <template if:false={sp.manLine}>
+                    <template if:true={sp.showLastPaid}>
+                        <!-- last paid -->
+                        <div class="slds-col slds-size_1-of-12 slds-m-right_medium">
+                            <!-- <lightning-input type="number" name={sp.ProductCode}  label='' class='ro hover' 
+                                        value={sp.lastPaid} formatter="currency" readonly  onclick={showValues}></lightning-input> -->
+                                        <!-- <lightning-helptext content={sp.docDate}></lightning-helptext> -->
+            
+                                        <p onclick={showValues} class="lastPaid"  data-target-id={sp.ProductCode}>{sp.lastPaid}</p>            
+                                        <p onclick={showValues} class="docDate"  data-target-id={sp.ProductCode}>{sp.docDate}</p>
+                                        
+                        </div>
+                        <!-- last margin -->
+                    <template if:false={pryingEyes}>
+                        <div class="slds-col slds-size_1-of-12 slds-m-right_large">
+                            <lightning-input type="number" data-target-id={sp.ProductCode} label="" class='ro hover'
+                                        value={sp.lastMarg} formatter="percent" step="0.01" readonly onclick={showValues}></lightning-input>
+                                        <!-- <p onclick={showValues} class="textInfo"  data-target-id={sp.ProductCode}>{sp.lastMarg}</p>  -->
+                        </div>
+                    </template>
+                    <template if:true={pryingEyes}>
+                        <div class="slds-col slds-size_1-of-12 slds-m-right_large">
+                            <lightning-input type="number" data-target-id={sp.ProductCode} label="" class='ro hover'
+                                        value='' formatter="percent" step="0.01" readonly onclick={showValues}></lightning-input>
+                                        <!-- <p onclick={showValues} class="textInfo"  data-target-id={sp.ProductCode}>{sp.lastMarg}</p>  -->
+                        </div>
+                    </template>
+                    </template>
+                    <template if:false={sp.showLastPaid}>
+                        <!-- Floor -->
+                        <div class="slds-col slds-size_1-of-12 slds-m-right_medium slds-align_absolute-center">
+                            <!-- <lightning-input type="text" name={sp.ProductCode}  label='' class='ro hover slds-text-body_small' 
+                                        value={sp.flrText}  readonly onclick={showValues}></lightning-input> -->
+                                        <p onclick={showValues} class="backSide"  data-target-id={sp.ProductCode}>{sp.flrText}</p>  
+                                        <!-- <lightning-helptext content={sp.docDate}></lightning-helptext> -->
+                        </div>
+                        <!-- level 1 -->
+                        <div class="slds-col slds-size_1-of-12 slds-m-right_large">
+                            <!-- <div class='hover'>
+                                <lightning-input type="text" name={sp.ProductCode} label="" class='ro'
+                                value={sp.lOneText}  step="0.01" readonly onclick={showValues}></lightning-input>
+                            </div> -->
+                            <p onclick={showValues} class="backSide2"  data-target-id={sp.ProductCode}>{sp.lOneText}</p>
+                        </div>
+                    </template>
+                        <!-- user margin can be changed or set -->
+                        <template if:false={pryingEyes}>
+                            <div class="slds-col slds-size_1-of-12 slds-m-right_x-large">
+                                <div data-margin={sp.ProductCode}>
+                                <lightning-input class='liquid' type="number"  
+                                                label="" name={sp.ProductCode} 
+                                                value={sp.CPQ_Margin__c} onchange={newMargin} step="0.01" 
+                                                read-only={sp.agency} ></lightning-input>
+                                </div>
+                            </div>
+                        </template>
+                        <template if:true={pryingEyes}>
+                            <div class="slds-col slds-size_1-of-12 slds-m-right_x-large">
+                                <div data-margin={sp.ProductCode}>
+                                <lightning-input class='liquid' type="number"  
+                                                label="" name={sp.ProductCode} 
+                                                value=''  
+                                                readonly></lightning-input>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- qty at this location links to related page -->
+                        <div class="slds-col slds-size_1-of-12 slds-m-right_large up">
+                            <a href={sp.url} target='_blank' class='liquid ro'>{sp.wInv}</a>
+                        </div>
+                        <!-- total price -->
+                        <div class='slds-col slds-size_1-of-12'>
+                            <lightning-input type="number" name="input4" formatter="currency"
+                                             readonly value={sp.TotalPrice} label="" ></lightning-input>
+                        </div>
+<!-- show line order for quotes -->
+            <template if:true={showSort}>
+                
+                    <div class="slds-col slds-size_1-of-12 qtyDiv">
+                        <div>
+                            <lightning-input type="number" name={sp.ProductCode}  value={sp.Line_Order__c} onchange={updateLineNumb}></lightning-input>
+                                    <!-- <lightning-input type="number" class='qtyMark' data-tar={sp.ProductCode} name={sp.ProductCode} min='1'
+                                    value={sp.Quantity} onchange={newQTY} step="0.01"></lightning-input> -->
+                        </div>
+                    </div>
+                    <div class="slds-col slds-size_1-of-12 arrBtn">
+                            <div>
+                                <lightning-button-icon icon-name="utility:arrowup" 
+                                    alternative-text="move up" title="move up" 
+                                    name={sp.ProductCode} onclick={moveUp} size="small">
+                                </lightning-button-icon>
+
+                                <lightning-button-icon icon-name="utility:arrowdown" 
+                                    alternative-text="move down" title="move down" 
+                                    name={sp.ProductCode} onclick={moveDown} size="small">
+                                </lightning-button-icon>
+                            </div>
+                    </div>
+                
+            </template>
+                        <!--comments-->
+                <template if:false={showSort}>
+                    <div class='slds-col slds-size_2-of-12'>
+                        <lightning-input type="text" value={sp.Description} 
+                                             name={sp.ProductCode} onchange={newComment} label=""></lightning-input>
+                    </div>
+                </template>
+        <!--End of Manual Line-->    
+            </template>
+            <!--For Man Lines-->
+                    <template if:true={sp.manLine}>
+                        <template if:false={showSort}>
+                                <div class='slds-col slds-size_8-of-12'>
+                                    <div data-margin={sp.ProductCode}>
+                                    <lightning-input type="text" value={sp.Description} class="manLine"
+                                        name={sp.ProductCode} onchange={newComment} label="Comment CUSTOMER FACING"></lightning-input>
+                                    </div>
+                                </div>
+                        </template>
+                        <template if:true={showSort}>
+                            <span class="slds-col slds-size_6-of-12"></span>
+                            <div class="slds-col slds-size_1-of-12 qtyDiv manQ">
+                                <div>
+                                    <lightning-input type="number" name={sp.ProductCode}  value={sp.Line_Order__c} onchange={updateLineNumb} step='1'></lightning-input>
+                                            <!-- <lightning-input type="number" class='qtyMark' data-tar={sp.ProductCode} name={sp.ProductCode} min='1'
+                                            value={sp.Quantity} onchange={newQTY} step="0.01"></lightning-input> -->
+                                </div>
+                            </div>
+                            <div class="slds-col slds-size_1-of-12 arrBtn">
+                                <div>
+                                    <lightning-button-icon icon-name="utility:arrowup" 
+                                        alternative-text="move up" title="move up" 
+                                        name={sp.ProductCode} onclick={moveUp} size="small">
+                                    </lightning-button-icon>
+    
+                                    <lightning-button-icon icon-name="utility:arrowdown" 
+                                        alternative-text="move down" title="move down" 
+                                        name={sp.ProductCode} onclick={moveDown} size="small">
+                                    </lightning-button-icon>
+                                </div>
+                        </div>
+                        </template>
+                    </template>
+<!-- This is the end of the for template -->
+                    </div>
+                </template>
+            </div>
+            </div>
+            <template if:true={wasSubmitted}>
+                <div class='slds-align_absolute-center'>
+                    <p class="changedProduct">Quote has been submitted you can clone this!</span></p>    
+                </div>
+            </template>
+    <template if:false={wasSubmitted}>
+            <template if:true={dropShip}>
+                <div class='slds-grid'>
+                    <div class='slds-col slds-size_2-of-3'>
+                        <!-- <p class="totals">Ship Weight: {shpWeight}--></p><p class="totals">Total Qty: {tQty}</p><p class="totals">Total Price: ${tPrice}</p><p class="totals">Total Margin: {tMargin}%</p>
+                        <template if:true={unsavedProducts}>
+                            <p class="changedProduct bottomChangedProduct">You have unsaved changes!</p>
+                        </template> 
+                    </div>
+                    <!-- Button Group to save -->
+                    <span class='slds-col slds-size_1-of-3 slds-m-bottom_x-small'>
+                        <div class='slds-float_right slds-m-right_medium'>
+                            <lightning-button-group>
+                                <lightning-button variant="brand" label="Save" title="save" onclick={saveProducts}></lightning-button>
+                                <!-- <lightning-button variant="brand" label="Get Quote" title="Get Quote" onclick={moveStage}></lightning-button> -->
+                                <!-- <lightning-button variant="success" label="Save Submit" title="save" onclick={saveSubmit}></lightning-button> -->
+                            </lightning-button-group>
+                        </div>
+                    </span>
+                </div>
+            </template>
+            <template if:false={dropShip}>
+            <template if:true={goodPricing}>
+                <div class='slds-grid'>
+                    <div class='slds-col slds-size_2-of-3'>
+                        <!-- <p class="totals">Ship Weight: {shpWeight}--></p><p class="totals">Total Qty: {tQty}</p><p class="totals">Total Price: ${tPrice}</p><p class="totals">Total Margin: {tMargin}%</p> 
+                    </div>
+                    <!-- Button Group to save -->
+                    <span class='slds-col slds-size_1-of-3 slds-m-bottom_x-small'>
+                        <div class='slds-float_right slds-m-right_medium'>
+                            <lightning-button-group>
+                                <lightning-button variant="brand" label="Save" title="save" onclick={saveProducts}></lightning-button>
+                                <!-- <lightning-button variant="brand" label="Get Quote" title="Get Quote" onclick={moveStage}></lightning-button> -->
+                                <!-- <lightning-button variant="success" label="Save Submit" title="save" onclick={saveSubmit}></lightning-button> -->
+                            </lightning-button-group>
+                        </div>
+                    </span>
+                </div>
+            </template>
+            <template if:false={goodPricing}>
+                <div class='slds-align_absolute-center'>
+                    <p>One or more items is below floor. Look for the price in <span style='color:red'>red</span></p>     
+                    <!-- <button onclick={initPriceCheck}>Check Floor Prices</button> -->
+                </div>
+            </template>
+            </template>
+    </template>
+    </template>
+        <template if:false={prodFound}>
+            <div class='slds-m-around_large slds-align_absolute-center'>
+                <h4>Selected products will appear hear</h4>
+                
+            </div>
+        </template>
+    </template>
+    </lightning-card>
+    <!-- price search -->
+    <c-prod-search-tags
+                price-book-id={pbId}
+                onremoveprod={handleRemove}
+                onaddprod={handleTagProduct}
+                onpromoselected={handlePromoSelection}></c-prod-search-tags>
+    <!-- Price Book Selection -->
+</template>

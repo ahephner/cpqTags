@@ -1,0 +1,217 @@
+<template>
+    <lightning-card title="Products" class="fullBody">
+    <template if:true={addProducts}>
+        <c-mobile-search-tags
+                        price-book-id={pbId}
+                        onnewprod={handleNewProduct}
+                        onclose={handleCloseSearch}
+                        onremove={handleRemLast}>
+                    </c-mobile-search-tags>
+    </template>
+    <template if:true={showProducts}>
+            <div class="slds-grid">
+                <div class='slds-col'>
+                    <figure class="iconContainer">
+                        <lightning-icon icon-name="action:edit" size="small" onclick={editAll}
+                                    class='slds-icon_container_circle slds-m-left_small' 
+                                    alternative-text="Edit All" title="Edit All"></lightning-icon>
+                                    <figcaption class='slds-p-top_x-small slds-text-body_small icon-figcaption'>{editAllText}</figcaption>
+                    </figure>                    
+                </div>
+                <div class='slds-col'>
+                    <figure class='iconContainer'>
+                        <lightning-icon icon-name="action:new" size="small" onclick={openProducts}
+                                    class='slds-icon_container_circle slds-m-left_small' 
+                                    alternative-text="Add Product" title="Add Products"></lightning-icon>
+                                    <figcaption class='slds-p-top_x-small slds-text-body_small icon-figcaption'>Add Products</figcaption>
+                    </figure>
+                </div>
+                <!-- Trying to add third button  -->
+                <div class='slds-col'>
+                    <figure class="iconContainer">
+                        <lightning-icon icon-name="action:new_child_case" size="small" onclick={addShip}
+                                    class='slds-icon_container_circle slds-m-left_small' 
+                                    alternative-text="Add Split Ship" title="Add Products"></lightning-icon>
+                                    <figcaption class='slds-p-top_x-small slds-text-body_small icon-figcaption'>Add Split Ship</figcaption>
+                    </figure>                    
+                </div>
+            </div>
+    <!-- Mobile Search Location -->
+    <label for="ship-select">Inventory Reference:</label>
+    <select name="Warehouse" class="slds-select valAdd"  onchange={selectChange}>
+        <template if:true={selectedObj}> 
+            <option value={selectedObj.value}>{selectedObj.label}</option>
+        </template>
+        <template if:false={selectedObj}>
+            <option value=""></option>
+        </template>
+        <template for:each={warehouseOptions} for:item='x'>
+
+            <option key={x.value} value={x.value}>{x.label}</option>
+        </template>
+    </select>
+    <!--Product Cards!-->
+    <div class='slds-scrollable_y cardClass' style='height:40rem; width:100%'>
+    <lightning-layout multiple-rows="true">
+    <template if:false={showSpinner} for:each={prod} for:item='item'>
+        <lightning-layout-item size="12" key={item.Product2Id} class="slds-box slds-p-around_none 
+        slds-m-top_x-small slds-m-bottom_medium slds-m-horizontal_none pcCard" 
+            name={item.Product_Name__c}>
+        <!-- <div class='slds-grid slds-wrap' onclick={flip} data-row={item.Product2Id} draggable="true"> -->
+        <div class='slds-grid slds-wrap'>    
+        <div class='slds-col slds-size_1-of-2 slds-m-left_x-small slds-m-top_medium'>
+            <!-- <h2 class="slds-text-heading_medium slds-m-bottom_medium"></h2> -->
+                <p>{item.name}</p> 
+                <p class="prodCode slds-p-top_xxx-small">{item.ProductCode}</p>
+        </div>
+    <!-- button group -->
+        <div class='slds-col slds-size_1-of-3 slds-m-left_x-small slds-m-top_medium'>
+            <div class="slds-p-around_medium lgc-bg ">
+                <lightning-button-menu alternative-text="Show menu" variant="border-filled" name={item.Product2Id} 
+                                       icon-size="small"  onselect={handleAction} icon-name="utility:threedots">
+                    <lightning-menu-item value="Edit" label="Edit"></lightning-menu-item>
+                    <lightning-menu-item value="Info" label="Info"></lightning-menu-item>
+                    <lightning-menu-item value="Delete" label="Delete" class='btnOptions'></lightning-menu-item>
+                </lightning-button-menu>
+            </div>
+        </div>
+<!--Move order up or down  -->
+        <template if:false={item.editQTY}>
+            <div class="slds-col slds-size_1-of-2 slds-m-left_x-small">
+                <p>Move PDF Order</p>
+            </div>
+            <div class="slds-col slds-size_1-of-2 slds-m-left_x-small  arrBtn">
+                <lightning-button-icon icon-name="utility:arrowup" 
+                    alternative-text="move up" title="move up" 
+                    name={item.Product2Id} onclick={moveUp} size="small">
+                </lightning-button-icon>
+    
+                <lightning-button-icon icon-name="utility:arrowdown" 
+                    alternative-text="move down" title="move down" 
+                    name={item.Product2Id} onclick={moveDown} size="small">
+                </lightning-button-icon>
+            </div>
+        </template>
+    <!--Shows pricing info stuff the rep can edit-->
+        <template if:false={item.showInfo}>
+    <!-- Unit Price -->
+            <div class='slds-col slds-size_1-of-2 slds-m-left_x-small'>
+                <div data-id={item.Product2Id}>
+                <lightning-input value={item.UnitPrice} type='number' formater='currency' step="0.01"
+                                name ={item.Product2Id} label='Unit Price' read-only={item.readOnly} onchange={handlePrice}></lightning-input>
+                </div>
+                <!--Last Paid-->
+                <template if:true={item.prevPurchase}>
+                    <lightning-input value={item.lastPaidDate} type='text' formatter="currency" label='Last Paid/Date' 
+                                    name ={item.Product2Id} readonly></lightning-input>
+                </template>
+    <!-- Qty -->
+                <lightning-input class="slds-m-bottom_x-small" value={item.Quantity} type='number' label='Qty' step="0.01" min={minUnits}
+                                name ={item.Product2Id} read-only={item.editQTY} onchange={handleQty}></lightning-input>
+    <!--Inventory  -->
+                <lightning-input value={item.wInv} type='number' name ={item.Product2Id} label='Inventory Avail.' readonly></lightning-input>
+            </div>
+            <!-- <div class='slds-col slds-size_1-of-4'></div> -->
+            <div class='slds-col slds-size_1-of-3 slds-m-left_x-small'>
+    <!-- Margin -->
+            <div data-target-id={item.Product2Id}>
+                <lightning-input value={item.CPQ_Margin__c} type='number' formater='percent' step="0.01"
+                                name ={item.Product2Id} label='Margin' read-only={item.readOnly} onchange={handleMargin}></lightning-input>
+            </div>
+    <!--Last Margin-->
+            <template if:true={item.prevPurchase}>
+                <lightning-input value={item.lastMarg} type='text' formatter="percent" label='Last Paid Margin' 
+                                name ={item.Product2Id} readonly></lightning-input>
+            </template>            
+    <!-- Total Price -->
+                <lightning-input value={item.TotalPrice} name ={item.Product2Id}  type='number' 
+                                formater='currency' label='Total Price' readonly></lightning-input>
+    <!-- Floor Type -->
+                <lightning-input value={item.Floor_Type__c} type='text'  label='Floor Type' 
+                                name ={item.Product2Id} readonly></lightning-input>
+            </div>
+    <!-- Former Inventory ref -->
+            <!-- <div class='slds-col slds-size_1-of-3 slds-m-left_x-small'>
+
+            </div> -->
+        </template>
+    <!--Shows more info like inventory if we can link it some how and costs-->    
+        <template if:true={item.showInfo}>
+            <div class='slds-col slds-size_1-of-2 slds-m-left_x-small'>
+    <!-- Cost -->
+                <lightning-input value={item.displayCost} type='text'  label='Cost' 
+                                name ={item.Product2Id} readonly></lightning-input>
+    <!-- levels  -->
+                <lightning-input value={item.levels} type='text' formatter="text" label='Level Pricing' 
+                                name ={item.Product2Id} readonly></lightning-input>
+    <!-- Last Quote Amount -->
+                <lightning-input value={item.lastQuoteAmount} type='text'  label='Last Quote' 
+                                name ={item.Product2Id} readonly></lightning-input>
+    <!-- Pallet QTY -->
+                <lightning-input value={item.palletConfig} type='text'  label='Pallet Config' 
+                                name ={item.Product2Id} readonly></lightning-input>
+            </div>
+            <!-- <div class='slds-col slds-size_1-of-4'></div> -->
+            <div class='slds-col slds-size_1-of-3 slds-m-left_x-small'>
+    <!-- Floor Price -->
+                <lightning-input value={item.Floor_Price__c} type='number' formatter="currency" label='Floor Price' 
+                                name ={item.Product2Id} readonly></lightning-input>
+    <!--Order By-->
+                <lightning-input value={item.Line_Order__c} name ={item.Product2Id}  type='number'  
+                                label='PDF Order' onchange={handleOrderSort} read-only={item.editQTY}></lightning-input>
+
+    <!-- Last Quote Margin -->
+                <lightning-input value={item.lastQuoteMargin} type='number'  label='Last Quote Marg' 
+                            name ={item.Product2Id} readonly></lightning-input>
+    <!-- SGN SIZE -->
+                <lightning-input value={item.sgn} type='number'  label='SGN Size' 
+                            name ={item.Product2Id} readonly></lightning-input>
+            </div>
+
+            <div class='slds-col slds-size_1-of-1 slds-m-bottom_x-small'>
+                <lightning-textarea name={item.Product2Id} value={item.Description} label="Product Note" placeholder="type here..." onchange={handleNote}></lightning-textarea>
+            </div>
+        </template>
+        </div>
+        </lightning-layout-item>
+    </template>
+</lightning-layout>
+<!--spinner-->
+<template if:true={showSpinner}>
+    <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+</template> 
+</div>
+<!-- save buttons -->
+<template if:false={submitted}>
+    <!--if drop ship allow saves-->
+    <template if:true={dropShip}>
+            <footer class="slds-modal__footer slds-align_absolute-center">
+                <button class="slds-button slds-button_neutral" onclick={handleCancel} title="Cancel">Cancel</button>
+                <button class="slds-button slds-button_neutral" onclick={saveMobile} title="save">Save</button>
+            </footer>
+    
+    </template>
+    <!--if it isnt drop ship enforce floor-->
+    <template if:false={dropShip}>
+    <template if:false={goodPricing}>
+        <footer class="slds-modal__footer slds-align_absolute-center">
+            <p>One or more items is below floor. Look for the price in <span style='color:red'>red</span></p>
+        </footer>
+    </template>
+    <template if:true={goodPricing}>
+        <footer class="slds-modal__footer slds-align_absolute-center">
+            <button class="slds-button slds-button_neutral" onclick={handleCancel} title="Cancel">Cancel</button>
+            <button class="slds-button slds-button_neutral" onclick={saveMobile} title="save">Save</button>
+        </footer>
+</template>
+</template>
+</template>
+<template if:true={submitted}>
+    <footer class="slds-modal__footer slds-align_absolute-center">
+        <p class="wasSubmitted">This quote has been submitted. You can clone it</p>
+    </footer>
+</template>
+
+</template>
+</lightning-card>
+</template>

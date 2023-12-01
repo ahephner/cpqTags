@@ -1,3 +1,8 @@
+//IMPORTANT!!!!!!!!!!!!!!!!!!
+//THIS CLASS IS USED MAINLY FOR prodSelectedTags, however, it is also shared across other projects. It is inserted here for reference when reading code. It mainly deals
+//Saving opportunity line items which are sepearte from the tags process. If making changes please verify that cpqApex folder on this GITHUB: 
+//https://github.com/ahephner/cpq - are not effected. 
+
 //due to the community using variations on the product2.productclass. We need to make sure we are only looking at the simple. 
 //Needs to be declared in any product search or product item inventory search
 public with sharing class cpqApex {

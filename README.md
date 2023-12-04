@@ -6,10 +6,13 @@ This project allows for custom search of our internal products. This allows for 
 Lets assume you have 3 different vehicles for sale.  A black motorcycle, a grey minivan and a red car. You want your users to search your inventory to find which vehicles you sell even if they don't know the exact vin #. Admins could create search lables that group vehicles together that seat 3 or more people or are red in color. You would create the following Search Labels: "Red Exterior Color" and "Seat 3 Plus".  Then you would create Tags as shown below
 
 New Tag Search Label Look up: "Red Exterior Color" Product Lookup: 'red car'
+
 New Tag Search Label Look up: "Seat 3 Plus" Product Lookup: 'red car'
+
 New Tag Search Label Look up: "Seat 3 Plus" Product Lookup: 'minivan'
 
 User Search => ‘Red’ return the red car
+
 User Search => ‘Seats 3” return minivan and red car
 
 ## Search Labels

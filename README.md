@@ -3,7 +3,7 @@
 This project allows for custom search of our internal products. This allows for admins to create phrases or promos and group products together. 
 
 ## Quick Example Use 
-Lets assume you have 3 different vehicles for sale.  A black motorcycle, a grey minivan and a red car. You want your users to search your inventory to find which vehicles you sell even if they don't know the exact vin #. Admins could create search lables that group vehicles together that seat 3 or more people or are red in color. You would create the following Search Labels: "Red Exterior Color" and "Seat 3 Plus".  Then you would create Tags as shown below
+Lets assume you have 3 different vehicles for sale.  A black truck, a grey minivan and a red car. You want your users to search your inventory to find which vehicles you sell even if they don't know the exact vin #. Admins could create search lables that group vehicles together that seat 3 or more people or are red in color. Also, you a offering 10% off new trucks. You would create the following Search Labels: "Red Exterior Color", "Seat 3 Plus" and a promo Label 'Truck Special'.  Then you would create Tags as shown below
 
 New Tag Search Label Look up: "Red Exterior Color" Product Lookup: 'red car'
 
@@ -11,9 +11,13 @@ New Tag Search Label Look up: "Seat 3 Plus" Product Lookup: 'red car'
 
 New Tag Search Label Look up: "Seat 3 Plus" Product Lookup: 'minivan'
 
+New Tag Search Label Look up: "Truck Special" Product Lookup: 'black truck'
+
 User Search => ‘Red’ return the red car
 
 User Search => ‘Seats 3” return minivan and red car
+
+User looks at promos and the black truck shows with the 10% off label. 
 
 ## Search Labels
 The [Search Label](https://advancedturf.lightning.force.com/lightning/setup/ObjectManager/01I6T000002uYCd/Details/view) should be treated as the catergoization. They need to be alphabetized and not repeated. Treat labels as essentially topics you want to be searchable. They are only limited by 125 character limit. Once the label is created you can associate it desired products using the tag object look ups. Mass importing or assigning tags can be done relatively quickly using python matching scripts. 
@@ -67,6 +71,20 @@ Stock, limited, close-out and Southern Stock and variations are removed from the
 in progress
 ### WH followed by 3 digits
 in progress
+
+## Object access
+This code here is simply for searching using the Search Labels and Tags Objects. To fully use ATS CPQ you need read/write access to 
+1. Opportunities
+2. Opportunity Line Items
+3. Price Books
+4. Price Book Items
+6. Product2
+5. Search Labels
+6. Tag
+
+## Further Code
+This works with [cpq](https://github.com/ahephner/cpq). The apex in these are actually what save, load or clone the line items. 
+
 
 ## Further Notes
 1* The order is important. The search engine runs on SOSL the order of the words is dependent on matching the first word. Knowing this the search string is actually alphabetized before it is sent to the server. If a user inputs 'My Apparal' it is transformed to 'Apparal My' then sent. If there are specific phrases like 'Home Run' or 'Grilled Cheese' that are common in the industry they still need to be alphabetized or put in the reserved keyword section. Tip - A.I. is good at generating Regex! 

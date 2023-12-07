@@ -66,11 +66,12 @@ Fertilizer analysis is removed and triggers a search strict mode
 changed to 2 4-D
 ### Stock Status
 Stock, limited, close-out and Southern Stock and variations are removed from the search string and pinned to the end of a where clause
-
+### Using comma ','
+This is equvialent to putting the word 'and' in the string. 'Red and Black' goes to server as 'black and red'
 ### FRAC
-in progress
+In progress
 ### WH followed by 3 digits
-in progress
+In progress
 
 ## Object access
 This code here is simply for searching using the Search Labels and Tags Objects. To fully use ATS CPQ you need read/write access to 
@@ -84,7 +85,9 @@ This code here is simply for searching using the Search Labels and Tags Objects.
 
 ## Further Code
 This works with [cpq](https://github.com/ahephner/cpq). The apex in these are actually what save, load or clone the line items. 
-
+###These are shared classes with cpq if updating anywhere please make sure to pull fresh code into vs code when changing updating
+LWC - Helper
+Apex - lwcHelper, cpqApex
 
 ## Further Notes
 1* The order is important. The search engine runs on SOSL the order of the words is dependent on matching the first word. Knowing this the search string is actually alphabetized before it is sent to the server. If a user inputs 'My Apparal' it is transformed to 'Apparal My' then sent. If there are specific phrases like 'Home Run' or 'Grilled Cheese' that are common in the industry they still need to be alphabetized or put in the reserved keyword section. Tip - A.I. is good at generating Regex! 

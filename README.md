@@ -42,7 +42,7 @@ Promotions need to have expiration dates to appear in search strings.
 To show in search a product does not need to have a label. 
 
 ## Tags
-The [Tags](https://advancedturf.lightning.force.com/lightning/setup/ObjectManager/01I6T000002uYCs/Details/view). This is the junction object that binds labels to products. It is what the code is actually searching over. The Search Slug 2 is where we are targeting the search. We have a [flow](https://advancedturf.lightning.force.com/builder_platform_interaction/flowBuilder.app?flowId=301VH000001Gk9ZYAS) that automatically will arrange the Search Slug 2 on various instances. You need to review the start criteria to see what qualifies. 
+The [Tags](https://advancedturf.lightning.force.com/lightning/setup/ObjectManager/01I6T000002uYCs/Details/view). This is the junction object that binds labels to products. It is what the code is actually searching over. The Search Slug 2 is where we are targeting the search. We have a [flow](https://advancedturf.lightning.force.com/builder_platform_interaction/flowBuilder.app?flowId=301VH000001Gk9ZYAS) that automatically will arrange the Search Slug 2 on various instances. You need to review the start criteria to see what qualifies. IMPORTANT!!, deactivate flow if mass importing!!!  
 
 Tags do not require a label to work just the product2 filled in. 
 
@@ -69,9 +69,9 @@ Stock, limited, close-out and Southern Stock and variations are removed from the
 ### Using comma ','
 This is equvialent to putting the word 'and' in the string. 'Red and Black' goes to server as 'black and red'
 ### FRAC
-In progress
+/frac\s*\d{1,2}/
 ### WH followed by 3 digits
-In progress
+/wh\s*\d\d\d/
 
 ## Object access
 This code here is simply for searching using the Search Labels and Tags Objects. To fully use ATS CPQ you need read/write access to 

@@ -23,13 +23,24 @@ public with sharing class cpqTagsSearch {
         return tagList;
     }
     
+    //Used to search the tag system. The query is created in tagHelper and prodSearchTags. 
+    //We are slow rolling out the product update insert from Tracie's GP job to append the WH123 to the new tag to the tail end
+    //In an effort to not disappoint users we look and see if the tag that contains the warehouse number exisits. If not we have a fallback search
+    //that removes the wh123 from the search string and pass to apex.
     @AuraEnabled(cacheable = true)
-    public static list<Tag__c> cpqSearchTag(string searchKey){
+    public static list<Tag__c> cpqSearchTag(string searchKey, boolean searchWareHouse, string backUpSearch ){
         list<Tag__c> tagList = new List<Tag__c>();
-        system.debug('searchKey -->'+searchKey);
-        List<List<SObject>>searchList=search.query(searchKey);
+        List<List<SObject>>searchList = new List<List<SObject>>();
+        	
+        searchList=search.query(searchKey);    
+        if(!searchWarehouse){
+        	tagList = searchList[0];    
+        }else if(searchWarehouse && searchList[0].isEmpty()){
+            system.debug('el if '+ backUpSearch); 
+            searchList = search.query(backUpSearch);
+            tagList = searchList[0]; 
+        }
         
-        tagList = searchList[0]; 
         return tagList;
     }
     

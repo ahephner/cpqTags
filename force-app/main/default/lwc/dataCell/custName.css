@@ -1,0 +1,90 @@
+
+.line{
+    display: flex;
+}
+.hover{
+    cursor: pointer;
+}
+
+.innerInfo{
+    position: absolute;
+      font-size: 14px;
+      background: #333;
+      color: #ffffff;
+      padding: 5px 8px;
+      border-radius: 5px;
+      box-shadow: 0 10px 10px rgba(0, 0, 0, 0.1);
+      opacity: 0;
+      pointer-events: none;
+      transition: 150ms transform;
+      transform-origin:bottom center;
+      /* bottom: -25%;
+      left: 15%; */
+      /* margin-left: -60px; */
+    }
+    
+    .hasInfo .innerInfo::before {
+      position: absolute;
+      content: "";
+      /* height: 8px;
+      width: 100px;
+      background: #f54242;
+      bottom: -.5px;
+      right: 50%; */
+      /* transform: translate(-50%) rotate(45deg); */
+      /* transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); */
+    }
+    .hasInfo:hover .innerInfo{
+        opacity:1;
+        transform: translateX(25px) translateY(-75px); 
+        visibility: visible;
+        width: max-content;
+        height:max-content;
+        pointer-events: auto;
+        z-index: 2;
+    }
+    
+    .topRow{
+        position: absolute;
+          font-size: 14px;
+          background: #333;
+          color: #ffffff;
+          padding: 5px 8px;
+          border-radius: 5px;
+          box-shadow: 0 10px 10px rgba(0, 0, 0, 0.1);
+          opacity: 0;
+          pointer-events: none;
+          transition: 150ms transform;
+          transform-origin:bottom center;
+          bottom: -275%;
+          left: 15%;
+          /* margin-left: -60px; */
+        }
+    
+        .hasInfo .topRow::before {
+            position: absolute;
+            content: "";
+            /* height: 8px;
+            width: 100px;
+            background: #f54242;
+            bottom: -.5px;
+            right: 50%; */
+            /* transform: translate(-50%) rotate(45deg); */
+            /* transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); */
+          }
+          .hasInfo:hover .topRow{
+              opacity:1;
+              transform: translateX(200px) translateY(-3%); 
+              visibility: visible;
+              width: max-content;
+              height:max-content;
+              pointer-events: auto;
+              z-index: 2;
+          }
+    /* .hasInfo:hover{
+        cursor: pointer;
+    } */
+    /* .hasInfo{
+        position: relative;
+        display: inline-flex; 
+    } */

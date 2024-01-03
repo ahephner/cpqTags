@@ -16,6 +16,8 @@ const REGEX_COMMA = /(,)/g;
 const REGEX_24D = /2,4-D|2 4-d|2, 4-D/gi;
 const REGEX_WAREHOUSE = /wh\s*\d\d\d/gi
 const REGEX_WHITESPACE = /\s/g; 
+
+
 import {spellCheck, cpqSearchString, uniqVals} from 'c/tagHelper';
 export default class ProdSearchTags extends LightningElement {
     @api recordId;
@@ -169,7 +171,12 @@ export default class ProdSearchTags extends LightningElement {
                     backUpQuery = buildSearchInfo.backUpQuery
                 
                 let data = await searchTag({searchKey: this.searchQuery, searchWareHouse:searchRacks, backUpSearch: backUpQuery}) 
-                let once = data.length> 1 ? await uniqVals(data) : data;
+                //here we split up the returned wrapper. 
+                //access the tags object using data.tags and the warehouse search using data.wareHouseFound
+                let tags = data.tags != undefined ? data.tags : []
+                let backUpSearchUsed = data.backUpSearchUsed; 
+                
+                let once = tags.length> 1 ? await uniqVals(tags) : tags;
                 this.searchSize = once.length; 
                 this.prod = await once.map((item, index) =>({
                                     ...item, 
@@ -192,7 +199,10 @@ export default class ProdSearchTags extends LightningElement {
                                     searchIndex: index + 1
                                     
                 }))
-               
+                if(backUpSearchUsed){
+                    let  DIDNT_FIND_AT_WAREHOUSE = [{Id:'1343', Name:`Not yet tagged for ${this.whSearch}, confirm Inventory after Selection`}]
+                    this.prod =  [...DIDNT_FIND_AT_WAREHOUSE, ...this.prod] 
+                }
                 this.loaded = true;
                 this.error = undefined;
                 
@@ -213,7 +223,7 @@ export default class ProdSearchTags extends LightningElement {
                 if(rowAction === 'unavailable'){
                     //need to update
                     alert('Sorry '+index.Product__r.Temp_Mess__c)
-                }else if(rowAction === 'Add'){
+                }else if(rowAction === 'Add' && rowCode!=undefined){
                     this.productsSelected ++; 
                     this.dispatchEvent(new CustomEvent('addprod',{
                         //detail: [rowProduct,rowCode, rowIndex,this.searchSize, this.searchTerm ]
@@ -241,6 +251,8 @@ export default class ProdSearchTags extends LightningElement {
                     index.rowValue = 'Add'
                     index.rowName = 'action:new';
                     this.prod= [...this.prod]
+                }else{
+                    return;
                 }
             }
 

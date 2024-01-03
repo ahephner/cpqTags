@@ -13,7 +13,10 @@ import PROD_FAM from '@salesforce/schema/Product2.Product_Family__c';
 const REGEX_SOSL_RESERVED = /(\?|&|\||!|\{|\}|\[|\]|\(|\)|\^|~|\*|:|"|\+|\\)/g;
 const REGEX_STOCK_RES = /(stock|sock|limited|limted|lmited|limit|close-out|close out|closeout|close  out|exempt|exmpet|exemept|southern stock|southernstock|southner stock)/g; 
 const REGEX_COMMA = /(,)/g;
-const REGEX_24D = /2,4-D|2 4-d|2, 4-D/gi
+const REGEX_24D = /2,4-D|2 4-d|2, 4-D/gi;
+const REGEX_WAREHOUSE = /wh\s*\d\d\d/gi
+const REGEX_WHITESPACE = /\s/g; 
+
 
 import {spellCheck, cpqSearchString, uniqVals} from 'c/tagHelper';
 export default class ProdSearchTags extends LightningElement {
@@ -33,6 +36,7 @@ export default class ProdSearchTags extends LightningElement {
     searchSize; 
     @track selection = [];
     newProd; 
+    whSearch; 
     @track columnsList = [
         {type: 'button-icon', 
          initialWidth: 75,typeAttributes:{
@@ -133,7 +137,7 @@ export default class ProdSearchTags extends LightningElement {
 ///search promos
             searchPromo(){
                 this.searchTerm = this.template.querySelector('[data-value="searchInput"]').value.toLowerCase().replace(REGEX_COMMA,' and ').replace(REGEX_SOSL_RESERVED,'?').replace(REGEX_STOCK_RES,'').trim();
-                console.log('sending', this.searchTerm)    
+                //console.log('sending', this.searchTerm)    
                 if(this.searchTerm.length<3){
                         //add lwc alert here
                         return;
@@ -142,25 +146,37 @@ export default class ProdSearchTags extends LightningElement {
             }
 //search tags
         async search(){
-                
+                this.whSearch = this.template.querySelector('[data-value="searchInput"]').value.trim().toLowerCase().replace(REGEX_WHITESPACE, "").match(REGEX_WAREHOUSE); 
                 this.stock = this.template.querySelector('[data-value="searchInput"]').value.trim().toLowerCase().match(REGEX_STOCK_RES); 
-                this.searchTerm = this.template.querySelector('[data-value="searchInput"]').value.toLowerCase().replace(REGEX_24D, '2 4-D').replace(REGEX_COMMA,' and ').replace(REGEX_SOSL_RESERVED,'?').replace(REGEX_STOCK_RES,'').trim();
+                this.searchTerm = this.template.querySelector('[data-value="searchInput"]').value.toLowerCase().replace(REGEX_24D, '2 4-D')
+                .replace(REGEX_COMMA,' and ').replace(REGEX_SOSL_RESERVED,'?').replace(REGEX_STOCK_RES,'').replace(REGEX_WAREHOUSE, '').trim();
                 if(this.searchTerm.length<3){
                     //add lwc alert here
                     return;
                 }
                 this.loaded = false; 
-
+                
+                //this var tells the search if we need to look at just the warehouse or more. Built as a back up as we update products
+                //at this time it is winter and not a lot of products are being updated. So this will see if we should look for the wh200
+                //however, if it fails we should then go ahead and do the normal search then warn the user that it is possible the WH200 was not found and we are showing
+                //the normal tag search
+                let searchRacks;
+                let backUpQuery;
                 if(this.stock){
                     this.stock = spellCheck(this.stock[0])
-                    this.searchQuery = cpqSearchString(this.searchTerm, this.stock);   
-                }else{
-                    this.searchQuery = cpqSearchString(this.searchTerm, this.stock); 
                 }
-                //console.log(this.searchQuery);
+                    let buildSearchInfo = cpqSearchString(this.searchTerm, this.stock, this.whSearch)
+                    this.searchQuery = buildSearchInfo.builtTerm;  
+                    searchRacks = buildSearchInfo.wareHouseSearch; 
+                    backUpQuery = buildSearchInfo.backUpQuery
                 
-                let data = await searchTag({searchKey: this.searchQuery}) 
-                let once = data.length> 1 ? await uniqVals(data) : data;
+                let data = await searchTag({searchKey: this.searchQuery, searchWareHouse:searchRacks, backUpSearch: backUpQuery}) 
+                //here we split up the returned wrapper. 
+                //access the tags object using data.tags and the warehouse search using data.wareHouseFound
+                let tags = data.tags != undefined ? data.tags : []
+                let backUpSearchUsed = data.backUpSearchUsed; 
+                
+                let once = tags.length> 1 ? await uniqVals(tags) : tags;
                 this.searchSize = once.length; 
                 this.prod = await once.map((item, index) =>({
                                     ...item, 
@@ -183,7 +199,10 @@ export default class ProdSearchTags extends LightningElement {
                                     searchIndex: index + 1
                                     
                 }))
-               
+                if(backUpSearchUsed){
+                    let  DIDNT_FIND_AT_WAREHOUSE = [{Id:'1343', Name:`Not yet tagged for ${this.whSearch}, confirm Inventory after Selection`}]
+                    this.prod =  [...DIDNT_FIND_AT_WAREHOUSE, ...this.prod] 
+                }
                 this.loaded = true;
                 this.error = undefined;
                 
@@ -204,7 +223,7 @@ export default class ProdSearchTags extends LightningElement {
                 if(rowAction === 'unavailable'){
                     //need to update
                     alert('Sorry '+index.Product__r.Temp_Mess__c)
-                }else if(rowAction === 'Add'){
+                }else if(rowAction === 'Add' && rowCode!=undefined){
                     this.productsSelected ++; 
                     this.dispatchEvent(new CustomEvent('addprod',{
                         //detail: [rowProduct,rowCode, rowIndex,this.searchSize, this.searchTerm ]
@@ -232,6 +251,8 @@ export default class ProdSearchTags extends LightningElement {
                     index.rowValue = 'Add'
                     index.rowName = 'action:new';
                     this.prod= [...this.prod]
+                }else{
+                    return;
                 }
             }
 

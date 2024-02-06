@@ -1,0 +1,74 @@
+<template>
+<lightning-card icon-name="standard:account" variant="base">
+  <div slot="title">
+      Price Book Search
+  </div>
+  <div slot="actions">
+
+  </div>
+<!-- body -->
+  <div>
+    <div class="slds-grid">
+        <div class="slds-col slds-size_1-of-3 slds-m-left_small">
+            <lightning-input 
+            type="text"
+            label="Product Search"
+            ></lightning-input>
+        </div>
+        <div class="slds-col slds-size_1-of-3 slds-m-left_small slds-m-top_large">
+            <lightning-button 
+            variant="success"
+            label="Search" 
+            onclick={handleSearch} 
+            ></lightning-button>
+        </div>
+    </div>
+    <div class="slds-m-left_small slds-m-top_small">
+           <p class="slds-text-heading_medium " style="display:inline">Advance Search</p>
+   
+           <template lwc:if={hideFilter}>
+               <lightning-icon class='slds-m-left_x-small slds-m-bottom_x-small' icon-name="utility:add" alternative-text="Connected" size="xx-small"
+               title="xx-small size" onclick={showFilter}></lightning-icon>
+            </template>
+            <template lwc:else>
+                <lightning-icon  class='slds-m-left_x-small slds-m-bottom_x-small' icon-name="utility:close" alternative-text="Connected" size="xx-small"
+            title="xx-small size" onclick={showFilter}></lightning-icon>
+            <div class="slds-grid">
+                <div class="slds-col slds-size_1-of-3 filters">
+                    <lightning-input 
+                      type="number"
+                      label="placeHolder Account Lookup"
+                    ></lightning-input>
+
+                    <lightning-combobox
+                    name="progress"
+                    label="Order By"
+                    value={orderByValue}
+                    placeholder=""
+                    options={orderByOptions}
+                    onchange={handleOrderby} ></lightning-combobox>
+                </div>
+                <div class="slds-col slds-size_1-of-3 slds-m-left_small">
+                    <lightning-input 
+                      type="number"
+                      label="input2"
+                    ></lightning-input>
+
+                    <lightning-combobox
+                        name="progress"
+                        label="Limit Results"
+                        value={limitValue}
+                        placeholder="Select Progress"
+                        options={limitOptions}
+                        onchange={handleLimits} ></lightning-combobox>
+                </div>
+            </div>
+        </template>
+        
+
+
+    </div>
+
+  </div>
+</lightning-card>    
+</template>

@@ -39,7 +39,7 @@ export default class QuickPriceBookCheck extends NavigationMixin(LightningElemen
                 })
                 this.books = [...this.standard, ...back]
                 this.loaded = true;
-            }else{
+            }else if(error){
                 this.books = [...this.standard]
                 this.loaded = true; 
                 console.error(error)

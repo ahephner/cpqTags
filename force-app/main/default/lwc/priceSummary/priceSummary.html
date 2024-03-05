@@ -35,10 +35,8 @@
             title="xx-small size" onclick={showFilter}></lightning-icon>
             <div class="slds-grid">
                 <div class="slds-col slds-size_1-of-3 filters">
-                    <lightning-input 
-                      type="number"
-                      label="placeHolder Account Lookup"
-                    ></lightning-input>
+                    <!-- https://github.com/ahephner/lwcSummer/blob/df04b0d3bdb98ed54fb31ebff081c8bb55599aac/force-app/main/default/lwc/rewardsFlow/rewardsFlow.js -->
+                    <c-account-look-up></c-account-look-up>
 
                     <lightning-combobox
                     name="progress"

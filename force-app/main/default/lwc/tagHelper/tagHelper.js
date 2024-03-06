@@ -18,6 +18,7 @@ const quickSearchString = (term, stock)=>{
 
   const cpqSearchString = (term, stock, wh) =>{
     let status = 'Active'
+    let nonStock = 'Non-Stock'; 
     let input = wh != null ? `${term} ${wh}`: term; 
     let wareHouseSearch = wh != null ? true :false; 
     let searchString = 'FIND \''+input+'\' IN ALL FIELDS RETURNING Tag__c(id, Tag_Description__c, Search_Slug_2__c, '
@@ -27,7 +28,7 @@ const quickSearchString = (term, stock)=>{
   
     //previous before order by status then score
     //stock != null ? searchString += ' and Stock_Status__c  = \''+stock+'\' order by Stock_Status__c desc nulls last)' : searchString += ' order by Stock_Status__c desc nulls last)'; 
-    stock != null ? searchString += ' and Stock_Status__c  = \''+stock+'\' and Stock_Status__c != null)' : searchString +=' and Stock_Status__c != null)';
+    stock != null ? searchString += ' and Stock_Status__c  = \''+stock+'\' and Stock_Status__c != null and Stock_Status__c != \''+nonStock+'\')' : searchString +=' and Stock_Status__c != null and Stock_Status__c != \''+nonStock+'\')';
     let backUpString = wareHouseSearch ? searchString.replace(` ${wh}`, '') : '';
   
   return {'builtTerm':searchString, 

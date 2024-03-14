@@ -5,6 +5,8 @@ import wrapSearch from '@salesforce/apex/cpqApexTags.getDetails';
 import getLastPaid from '@salesforce/apex/cpqApex.getLastPaid'; 
 import getLastQuote from '@salesforce/apex/cpqApex.getLastQuote';
 import getInventory from '@salesforce/apex/cpqApex.getInventory';
+import createQueries from '@salesforce/apex/searchQueries.createQueries';
+import queryType from '@salesforce/apex/lwcHelper.getRecordTypeId';
 import onLoadGetInventory from '@salesforce/apex/cpqApex.onLoadGetInventory';
 import getProducts from '@salesforce/apex/cpqApex.getProducts';
 import inCounts from '@salesforce/apex/cpqApex.inCounts';
@@ -21,7 +23,8 @@ import STAGE from '@salesforce/schema/Opportunity.StageName';
 import RUP_PROD from '@salesforce/schema/Opportunity.RUP_Selected__c';
 import DELIVERYDATE from '@salesforce/schema/Opportunity.Delivery_Date_s_Requested__c';
 import {mergeInv,mergeLastPaid, lineTotal, onLoadProducts , newInventory, handleWarning,updateNewProducts, mergeLastQuote, 
-    getTotals, roundNum,totalChange, checkPricing, getShipping, allInventory, checkRUP, sortArray, removeLineItem} from 'c/mh2'
+    getTotals, roundNum,totalChange, checkPricing, getShipping, allInventory, checkRUP, sortArray, removeLineItem} from 'c/mh2';
+import{setOPMetric} from 'c/helper';
 import { FlowNavigationNextEvent,FlowAttributeChangeEvent, FlowNavigationBackEvent  } from 'lightning/flowSupport';
 
 const fields = [SHIPCHARGE, RUP_PROD, ACC_ID, WAREHOUSE,PB_ID, SHIP_TYPE, STAGE, DELIVERYDATE];
@@ -71,6 +74,7 @@ export default class MobileProdSelected extends LightningElement {
     //for ordering products on the order. This will be set to the last Line_Order__c # on load or set at 0 on new order;
     lineOrderNumber = 0; 
     hasRendered = true;
+    queryRecordType
 
     connectedCallback() {
         //console.log(1, this.shipType);
@@ -110,6 +114,13 @@ export default class MobileProdSelected extends LightningElement {
          }else if(error){
              console.log('error '+JSON.stringify(error));
              
+         }
+     }
+
+     @wire(queryType, ({objectName: 'Query__c', recTypeName: 'Opportunity'}))
+     wiredRec({error, data}){
+         if(data){
+             this.queryRecordType = data;
          }
      }
     //on load get products
@@ -180,7 +191,10 @@ export default class MobileProdSelected extends LightningElement {
     }
 
     handleAction(e){
-        let action = e.detail.value
+        //if you go back to the drop menu button uncomment
+        //let action = e.detail.value
+        //buttons use target
+        let action = e.target.value; 
         let index = this.prod.findIndex(x => x.Product2Id === e.target.name)
         
         switch (action) {
@@ -202,19 +216,27 @@ export default class MobileProdSelected extends LightningElement {
     //check if it's an agency product then which fields are editable at this point
     edit(index){
         if(this.prod[index].Agency__c && this.prod[index].editQTY === true){
-             this.prod[index].editQTY = false;   
+             this.prod[index].editQTY = false;  
+             this.prod[index].btnVar = 'success';
+             this.prod[index].btnLabel = 'Close'; 
         }else if(this.prod[index].Agency__c && this.prod[index].editQTY === false){
-             this.prod[index].editQTY = true; 
+             this.prod[index].editQTY = true;
+             this.prod[index].btnVar = 'destructive';
+             this.prod[index].btnLabel = 'Edit'; 
         }else if(this.prod[index].readOnly === false && this.prod[index].showInfo === false){
              this.prod[index].readOnly = true;
              this.prod[index].editQTY = true;
+             this.prod[index].btnVar = 'destructive';
+             this.prod[index].btnLabel = 'Edit';
         }else if(this.prod[index].readOnly === false && this.prod[index].showInfo === true){
              this.prod[index].showInfo = false; 
              this.prod[index].readOnly = false;
              this.prod[index].editQTY = false;  
         }else{
              this.prod[index].readOnly = false;
-             this.prod[index].editQTY = false; 
+             this.prod[index].editQTY = false;
+             this.prod[index].btnVar = 'success';
+             this.prod[index].btnLabel = 'Close'; 
         }  
     }
 
@@ -228,11 +250,17 @@ export default class MobileProdSelected extends LightningElement {
         for (let index = 0; index < this.prod.length; index++){
              if(this.prod[index].Agency__c && this.prod[index].editQTY === true){
                  this.prod[index].editQTY = false;   
+                 this.prod[index].btnVar = 'success';
+                 this.prod[index].btnLabel = 'Close'; 
              }else if(this.prod[index].Agency__c && this.prod[index].editQTY === false){
                  this.prod[index].editQTY = true; 
+                 this.prod[index].btnVar = 'destructive';
+                 this.prod[index].btnLabel = 'Edit';
              }else if(this.prod[index].readOnly === false && this.prod[index].showInfo === false){
                  this.prod[index].readOnly = true;
                  this.prod[index].editQTY = true;
+                 this.prod[index].btnVar = 'destructive';
+                 this.prod[index].btnLabel = 'Edit';
              }else if(this.prod[index].readOnly === false && this.prod[index].showInfo === true){
                  this.prod[index].showInfo = false; 
                  this.prod[index].readOnly = false;
@@ -240,9 +268,14 @@ export default class MobileProdSelected extends LightningElement {
              }else{
                  this.prod[index].readOnly = false;
                  this.prod[index].editQTY = false; 
+                 this.prod[index].btnVar = 'success';
+                 this.prod[index].btnLabel = 'Close'; 
          }
             
         }
+    }
+    handleToggleSection(event){
+        console.log(event.detail.openSections)
     }
 //show qty on hand 
     info(index){
@@ -439,7 +472,8 @@ handleOrderSort(item){
         let shipTotal = this.prod.filter(y => y.ProductCode.includes('SHIPPING'));
         //check if there are Restricted Use Products on the order list
         let rupProds = checkRUP(this.prod);
-        createProducts({olList: this.prod, oppId: this.recordId})
+        
+        createProducts({olList: this.prod, oppId: this.recordId, accId: this.accountId})
         .then(result => {
             let back = updateNewProducts(newProduct, result);
             this.prod =[...alreadyThere, ...back]; 
@@ -448,6 +482,10 @@ handleOrderSort(item){
             this.total = this.orderTotal(this.prod)
             this.showSpinner = false; 
             alert('Products Saved!')
+        }).then(()=>{
+            let saveQ = createQueries({queryList: this.metricsArray});
+            this.metricsArray = [];
+            //this.metricsPromo = [];
         }).then(()=>{
             let shipCharge = getShipping(shipTotal);
             
@@ -602,6 +640,8 @@ handleOrderSort(item){
                         Ship_Weight__c: this.shipWeight,
                         sgn: this.sgn,
                         resUse: this.rupProd,
+                        btnVar: 'destructive',
+                        btnLabel: 'Edit', 
                         levels:'Lvl 1 $'+this.levelOne + ' Lvl 2 $'+ this.levelTwo,
                         goodPrice: true,
                         Line_Order__c: this.lineOrderNumber,
@@ -642,6 +682,8 @@ handleOrderSort(item){
                         Ship_Weight__c: this.shipWeight,
                         sgn: this.sgn,
                         resUse: this.rupProd,
+                        btnVar: 'destructive',
+                        btnLabel: 'Edit', 
                         levels:'Lvl 1 $'+this.levelOne + ' Lvl 2 $'+ this.levelTwo,
                         goodPrice: true,
                         Line_Order__c: this.lineOrderNumber,
@@ -657,20 +699,23 @@ handleOrderSort(item){
     //New product selected from mobile search
     //!!Unit Cost is Unit Price on pbe. That is the api name. 
     //The lable is list price. 
-    handleNewProduct(prod){
+    async  handleNewProduct(prod){
         
-      this.productCode = prod.detail[1]; 
+            this.productCode = prod.detail.prodCode; 
         
-        //check if they already have it on the order. We can't have multiple same sku's on a bill
-        let alreadyThere = this.prod.findIndex(prod => prod.ProductCode === this.productCode);
-        //console.log('already there '+ alreadyThere)
-        if(alreadyThere < 0){
-            this.productId = prod.detail[0]; 
-            this.searchWrap();
-            this.wasEdited = true; 
-        }else{
-            return; 
-        }
+            //check if they already have it on the order. We can't have multiple same sku's on a bill
+            let alreadyThere = this.prod.findIndex(prod => prod.ProductCode === this.productCode);
+            //console.log('already there '+ alreadyThere)
+            if(alreadyThere < 0){
+                this.productId = prod.detail.prodId;
+                
+                let one = await this.searchWrap();
+                //add tag to create query entry for metrics
+                let two = await this.handleTagMetrics(prod.detail)
+                this.wasEdited = true; 
+            }else{
+                return; 
+            }
     }
 
     addShip(){
@@ -707,6 +752,8 @@ handleOrderSort(item){
             //tips: this.agency ? 'Agency' : 'Cost: $'+this.unitCost +' Company Last Paid: $' +this.companyLastPaid + ' Code ' +this.productCode,
             goodPrice: true,
             manLine: false,
+            btnVar: 'destructive',
+            btnLabel: 'Edit', 
             Line_Order__c: this.lineOrderNumber,
             url:`https://advancedturf.lightning.force.com/lightning/r/01t2M0000062XwhQAE/related/ProductItems/view`,
             OpportunityId: this.recordId
@@ -744,6 +791,8 @@ handleOrderSort(item){
             //tips: this.agency ? 'Agency' : 'Cost: $'+this.unitCost +' Company Last Paid: $' +this.companyLastPaid + ' Code ' +this.productCode,
             goodPrice: true,
             manLine: false,
+            btnVar: 'destructive',
+            btnLabel: 'Edit', 
             url:`https://advancedturf.lightning.force.com/lightning/r/01t2M0000062XwhQAE/related/ProductItems/view`,
             Line_Order__c: this.lineOrderNumber,
             OpportunityId: this.recordId
@@ -808,6 +857,8 @@ handleOrderSort(item){
                     Ship_Weight__c: this.shipWeight,
                     sgn: this.sgn,
                     resUse: this.rupProd,
+                    btnVar: 'destructive',
+                    btnLabel: 'Edit', 
                     levels:'Lvl 1 $'+this.levelOne + ' Lvl 2 $'+ this.levelTwo,
                     goodPrice: true,
                     Line_Order__c: this.lineOrderNumber,
@@ -849,6 +900,8 @@ handleOrderSort(item){
                     Ship_Weight__c: this.shipWeight,
                     sgn: this.sgn,
                     resUse: this.rupProd,
+                    btnVar: 'destructive',
+                    btnLabel: 'Edit', 
                     levels:'Lvl 1 $'+this.levelOne + ' Lvl 2 $'+ this.levelTwo,
                     goodPrice: true,
                     Line_Order__c: this.lineOrderNumber,
@@ -1007,4 +1060,24 @@ allowSave(){
             console.log(JSON.stringify('errors -> '+error))
         }
     }
+    metricsArray = []
+    //will be moved to a mixins or helper
+    //ok with hardcoding Device_Type__c as this will only ever be used for desktop. 
+    handleTagMetrics(x){
+        //console.log(this.queryRecordType, 'aj');
+        
+        this.metricsArray = [
+            ...this.metricsArray, {
+            sObjectType: 'Query__c',
+            RecordTypeId: this.queryRecordType,
+            Device_Type__c: 'Phone',
+            Opportunity__c: this.recordId,
+            Term__c: x.searchedTerm,
+            Query_Size__c: x.searchSize,
+            Search_Index__c: x.searchIndex,
+            Product: x.prodId,
+            Tag__c: x.tagId,
+            ATS_Score__c: x.tagScore
+        }] 
+    } 
 }

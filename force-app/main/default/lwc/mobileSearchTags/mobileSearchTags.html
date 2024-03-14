@@ -6,6 +6,7 @@
                                 onclosefilter={closeFilter}>
         </c-mobile-search-filters>
     </template>    
+    <div class='slds-scrollable_y target searchRes'>
      <template if:true={loaded}>
          <template if:false={openFilters}>
         <div class='slds-grid slds-wrap'>
@@ -13,24 +14,13 @@
             
                     <lightning-input
                     name="enter-search"
-                    label="Search For Products"
+                    label={searchBarLabel}
                     type="search"
+                    data-value="searchInput"
                 ></lightning-input>
             
         </div>
-    <!-- button group -->
-            <div class='slds-col slds-size_1-of-3 slds-m-left_x-small slds-m-top_small'>
-                <div class="slds-p-around_medium lgc-bg">
-                    <lightning-button-group>
-                        <!-- search -->
-                        <lightning-button label="Search" variant='brand' onclick={handleSearch}></lightning-button>
-                        <!-- filter button -->
-                        <lightning-button-icon variant="border-filled"
-                        icon-name="utility:filterList" onclick={addFilters} ></lightning-button-icon>
-                    </lightning-button-group>
-    
-                </div>
-            </div>    
+ 
     <!--Display chosen filters-->
     <template if:true={showFilters}>
         <div class='slds-col slds-size_1-of-3 slds-m-left_x-small slds-m-top_x-small'>
@@ -41,7 +31,7 @@
     
             <!-- search Results -->
         <div class='slds-col slds-size_1-of-1 outer'>
-        <div class='slds-scrollable_y target searchRes'>
+        
             <lightning-layout multiple-rows="true">
                 <template for:each={prod} for:item='x'>
                     <lightning-layout-item size="12" key={x.Id} name={x.ProductCode} class="slds-box slds-p-around_none 
@@ -89,16 +79,15 @@
     
                 </template>
             </lightning-layout>
-            </div>
+            
             <!--dont let first results push view port-->
         </div>
         </div>
-        <footer class="slds-modal__footer slds-align_absolute-center">
-            <button class="slds-button slds-button_brand" onclick={handleDone} title="Done">Done</button>
-        </footer>
+       
         </template>
     </template>
         <template if:false={loaded}>
             <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
         </template>
+        </div>
     </template>

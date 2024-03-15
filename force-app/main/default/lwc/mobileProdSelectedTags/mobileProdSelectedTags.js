@@ -22,9 +22,12 @@ import SHIPCHARGE from '@salesforce/schema/Opportunity.Shipping_Total__c';
 import STAGE from '@salesforce/schema/Opportunity.StageName';
 import RUP_PROD from '@salesforce/schema/Opportunity.RUP_Selected__c';
 import DELIVERYDATE from '@salesforce/schema/Opportunity.Delivery_Date_s_Requested__c';
+//PROMO 
+import promoAdd from '@salesforce/apex/cpqApexTags.promoDetails';
 import {mergeInv,mergeLastPaid, lineTotal, onLoadProducts , newInventory, handleWarning,updateNewProducts, mergeLastQuote, 
     getTotals, roundNum,totalChange, checkPricing, getShipping, allInventory, checkRUP, sortArray, removeLineItem} from 'c/mh2';
 import{setOPMetric} from 'c/helper';
+import {addSingleKey} from 'c/tagHelper'
 import { FlowNavigationNextEvent,FlowAttributeChangeEvent, FlowNavigationBackEvent  } from 'lightning/flowSupport';
 
 const fields = [SHIPCHARGE, RUP_PROD, ACC_ID, WAREHOUSE,PB_ID, SHIP_TYPE, STAGE, DELIVERYDATE];
@@ -1080,4 +1083,112 @@ allowSave(){
             ATS_Score__c: x.tagScore
         }] 
     } 
+    metricsPromo = []
+    handlePromoMetrics(x){
+        this.metricsPromo = [
+            ...this.metricsPromo,{
+                sObjectType: "Query__c",
+                //recordTypeId: '012Ec0000002BozIAE',
+                Opportunity__c: this.recordId,
+                Search_Label__c: x
+            }
+        ]
+    }   
+
+    metricsPromo = []
+    handlePromoMetrics(x){
+        this.metricsPromo = [
+            ...this.metricsPromo,{
+                sObjectType: "Query__c",
+                //recordTypeId: '012Ec0000002BozIAE',
+                Opportunity__c: this.recordId,
+                Search_Label__c: x
+            }
+        ]
+    }   
+//Check for duplicate products on promo adds
+    promoDupCheck(x){
+        let alreadyThere = this.prod.findIndex(prod => prod.ProductCode === x);
+        return alreadyThere; 
+    }
+
+    //PROMO 
+    discountPercent; 
+    async  handlePromoSelection(mess){
+            let promoId = mess.detail.promoId;
+            this.discountPercent = mess.detail.discount; 
+             
+             
+            try {
+                
+                let results = await promoAdd({pId: promoId, locationId: this.warehouse, accId:undefined , pc:this.productCode , recId: this.recordId, priceBookId: this.pbId});
+                let merged = await addSingleKey(results.promoProduct,"Product2Id", results.qtyTag, "Product__c", "Quantity__c" )
+                
+                for(let i=0; i < merged.length; i++){
+                    let dupCheck = this.promoDupCheck(merged[i].Product2.ProductCode);
+                    if(dupCheck>=0){
+                        continue; 
+                    }else{
+                        let ind = await this.setFieldValues(merged[i]);
+                        this.prod = [
+                            ...this.prod, {
+                                sObjectType: 'OpportunityLineItem',
+                                PricebookEntryId: this.pbeId,
+                                Id: '',
+                                Product2Id: this.productId,
+                                agency: this.agency,
+                                name: this.productName,
+                                ProductCode: this.productCode,
+                                Ship_Weight__c: this.unitWeight,
+                                Quantity: merged[i].Qty > 0 ? merged[i].Qty : 1,
+                                UnitPrice: this.agency ? this.fPrice: this.levelTwo,
+                                floorPrice: this.fPrice,
+                                lOne: this.agency? this.fPrice : this.levelOne,
+                                lTwo: this.levelTwo,
+                                lastPaid: 0,
+                                lastMarg: 0, 
+                                docDate: 'First Purchase', 
+                                CPQ_Margin__c: this.agency?'':this.levelTwoMargin,
+                                Cost__c: this.unitCost,
+                                displayCost: this.agency ? 'Agency' : this.unitCost,
+                                TotalPrice: this.agency? this.fPrice : this.levelTwo,
+                                Discount: this.lineDiscount ? this.lineDiscount : '',
+                                wInv: !this.invCount ? 0 :this.invCount.Quantity_Available__c,
+                                showLastPaid: true,
+                                lastQuoteAmount: !this.lastQuote ? 0 : this.lastQuote.Last_Quote_Price__c,
+                                lastQuoteMargin: !this.lastQuote ? 0 : this.lastQuote.Last_Quote_Margin__c,
+                                lastQuoteDate: !this.lastQuote ? '' : this.lastQuote.Quote_Date__c,
+                                flrText: 'flr price $'+ this.fPrice,
+                                lOneText: 'lev 1 $'+this.levelOne, 
+                                companyLastPaid: this.companyLastPaid,
+                                palletConfig: this.palletConfig,
+                                sgn: this.sgn,
+                                //tips: this.agency ? 'Agency' : 'Cost: $'+this.unitCost +' Company Last Paid $' +this.companyLastPaid + ' Code ' +this.productCode,
+                                goodPrice: true,
+                                resUse: this.resUse,
+                                manLine: this.productCode.includes('MANUAL CHARGE') ? true : false,
+                                Line_Order__c: this.lineOrderNumber,
+                                lastThirty:  '0',
+                                url:`https://advancedturf.lightning.force.com/lightning/r/${this.productId}/related/ProductItems/view`,
+                                OpportunityId: this.recordId
+                            }
+                        ]
+                        
+                    }
+                }
+                 
+
+
+            
+            
+            
+            this.loaded = true; 
+            //console.log(`The discount to apply ${this.discountPercent}%`)
+                this.handlePromoMetrics(promoId);
+            } catch (error) {
+                console.error(error)
+                alert(error); 
+            }
+            
+        }
 }

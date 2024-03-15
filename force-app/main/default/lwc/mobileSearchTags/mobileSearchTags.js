@@ -1,7 +1,10 @@
 import { LightningElement, api, track } from 'lwc';
 import LightningAlert from 'lightning/alert';
 import searchTag from '@salesforce/apex/cpqTagsSearch.cpqSearchTag';
+//Search Promos
 import searchPromos from '@salesforce/apex/cpqTagsSearch.searchPromos';
+import onLoadPromos from '@salesforce/apex/cpqTagsSearch.onLoadPromos';
+import onLoadTagPromos from '@salesforce/apex/cpqTagsSearch.onLoadTagPromos';
 
 const REGEX_SOSL_RESERVED = /(\?|&|\||!|\{|\}|\[|\]|\(|\)|\^|~|\*|:|"|\+|\\)/g;
 const REGEX_STOCK_RES = /(stock|sock|limited|limted|lmited|limit|close-out|close out|closeout|close  out|exempt|exmpet|exemept|southern stock|southernstock|southner stock)/g; 
@@ -26,6 +29,9 @@ export default class MobileSearchTags extends LightningElement{
     stock; 
     searchQuery;
     searchSize; 
+    searchType = 'Search Products';
+    avalSearh = 'Search Promo'
+    searchBarLabel = 'Search Products'
 
     connectedCallback(){
         this.loaded = true; 
@@ -76,14 +82,30 @@ export default class MobileSearchTags extends LightningElement{
             this.pf = 'All';
         }        
     }
- 
+
+    showProducts = true; 
+    handleSwitchSearch(evt){
+        this.searchType = evt.detail.value === 'Search Promo' ? 'Search Promo': 'Search Products';
+        this.avalSearh = evt.detail.value === 'Search Promo' ? 'Search Products' : 'Search Promo';
+        this.showProducts = evt.detail.value === 'Search Promo' ? false : true; 
+        this.searchBarLabel = evt.detail.value; 
+    }
+
+    handleDone(){
+        this.loaded = false;
+        this.dispatchEvent(new CustomEvent('close'));
+        
+    }
+    handleCancel(){
+        console.log('cancel');
+    }
         //handle the search button click
         //create search strings
     handleSearch(){
          if(this.searchType === 'Search Products'){
             this.search();  
          }else if(this.searchType === 'Search Promo'){
-            this.searchPromo(); 
+            this.promoSearch(); 
          }else{
             return; 
          }
@@ -215,9 +237,72 @@ export default class MobileSearchTags extends LightningElement{
         console.log('mess ' +mess); 
     }
 
+///SEARCH PROMO
+@track promoBack = [];; 
+dateNow = new Date();
+today = this.dateNow.getFullYear()+'-'+(this.dateNow.getMonth()+1)+'-'+this.dateNow.getDate();
+loadedBefore = false
+testing; 
 
-    handleCancel(){
-        console.log('cancel');
-        
+getFormattedDate(stringDateIn, stringDate2) {
+    let date = new Date(stringDateIn)
+    let date2 = new Date(stringDate2)
+    let year = date.getFullYear();
+    let month = (1 + date.getMonth()).toString().padStart(2, '0');
+    let day = date.getDate().toString().padStart(2, '0');
+    let prettyDate = month + '/' + day + '/' + year;
+    let diff = Math.ceil(((date.getTime() - date2.getTime())/ (1000 * 3600 * 24))) //-1;
+    return {
+            prettyDate,
+            diff
     }
+        }
+        async promoSearch(searchString){
+            this.loaded = false
+            try {
+                let searchString = this.template.querySelector('[data-value="searchInput"]').value.toLowerCase()
+                let pros = await searchPromos({query:searchString})
+                //let once = pros.length> 1 ? await uniqPromo(pros) : pros;
+    
+                    this.promoBack = await pros.map((item, index)=>({
+                        ...item,
+                        experDate: this.getFormattedDate(item.Expiration_Date__c, this.today).prettyDate,
+                        experDays: this.getFormattedDate(item.Expiration_Date__c, this.today).diff,
+                        btnName: "utility:add",
+                        btnVariant: "brand",
+                        dayClass: this.getFormattedDate(item.Expiration_Date__c, this.today).diff<= 7 ? 'redClass': '' 
+                    }))
+                
+                this.loaded = true; 
+                //console.log(JSON.stringify(this.data))
+            } catch (error) {
+                await LightningAlert.open({
+                    message: error,
+                    theme: 'error', // a red theme intended for error states
+                    label: 'Error!', // this is the header text
+                });
+            }
+        }
+
+        //export get products add to order
+    addPromo(e){
+        const rowId = e.target.name;
+        let index = this.promoBack.find((tar)=> tar.Id === rowId); 
+       
+
+        const dp =  Number(e.currentTarget.dataset.label); 
+        const discountPercent = isNaN(dp) || dp===null ? 1 : dp/100;  
+
+        this.dispatchEvent(new CustomEvent('promoid', {
+            detail: {
+                promoId: rowId,
+                discount: discountPercent
+            }
+        }))
+        
+        index.btnName = 'action:check';
+        index.btnVariant = 'success'; 
+        this.promoBack = [...this.promoBack]; 
+    }
+
 }

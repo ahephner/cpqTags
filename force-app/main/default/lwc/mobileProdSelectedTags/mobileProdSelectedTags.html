@@ -1,7 +1,13 @@
 <template>
     <lightning-card title="Products" class="fullBody">
     <template if:true={addProducts}>
-        <c-mobile-search-container onclose={handleCloseSearch}></c-mobile-search-container>
+        <c-mobile-search-tags
+        price-book-id={pbId}
+        onnewprod={handleNewProduct}
+        onclose={handleCloseSearch}
+        onremove={handleRemLast}
+        onpromoid={handlePromoSelection}>
+    </c-mobile-search-tags>
     </template>
     <template if:true={showProducts}>
             <div class="slds-grid">

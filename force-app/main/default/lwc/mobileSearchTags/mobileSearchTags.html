@@ -10,7 +10,7 @@
      <template if:true={loaded}>
          <template if:false={openFilters}>
         <div class='slds-grid slds-wrap'>
-            <div class='slds-col slds-size_1-of-2'>
+            <div class='slds-col slds-size_2-of-4'>
             
                     <lightning-input
                     name="enter-search"
@@ -18,8 +18,24 @@
                     type="search"
                     data-value="searchInput"
                 ></lightning-input>
-            
+            </div>
+                    <!-- button group -->
+    <div class='slds-col slds-size_1-of-4 slds-m-left_x-small slds-m-top_small'>
+        <div class="slds-p-around_medium lgc-bg">
+            <lightning-button-group>
+                <!-- search -->
+                <lightning-button label="Search" variant='brand' onclick={handleSearch}></lightning-button>
+                <!-- filter button -->
+                <!-- <lightning-button-icon variant="border-filled"
+                icon-name="utility:filterList" onclick={addFilters} ></lightning-button-icon> -->
+                <lightning-button-menu alternative-text="Show menu" variant="border-filled" onselect={handleSwitchSearch}>
+                    <lightning-menu-item value={avalSearh} label={avalSearh}></lightning-menu-item>
+                </lightning-button-menu>
+            </lightning-button-group>
+
         </div>
+    </div>
+            
  
     <!--Display chosen filters-->
     <template if:true={showFilters}>
@@ -33,54 +49,87 @@
         <div class='slds-col slds-size_1-of-1 outer'>
         
             <lightning-layout multiple-rows="true">
-                <template for:each={prod} for:item='x'>
-                    <lightning-layout-item size="12" key={x.Id} name={x.ProductCode} class="slds-box slds-p-around_none 
-                    slds-m-top_x-small slds-m-bottom_medium slds-m-horizontal_none">
-                    <div class='slds-grid slds-wrap'>
-                        <div class='slds-col slds-size_1-of-1 slds-m-left_x-small'>
-                                <!--inner grid-->
-                            <div class='slds-grid'>
+                <template if:true={showProducts}>
+                    <template for:each={prod} for:item='x'>
+                        <lightning-layout-item size="12" key={x.Id} name={x.ProductCode} class="slds-box slds-p-around_none 
+                        slds-m-top_x-small slds-m-bottom_medium slds-m-horizontal_none">
+                        <div class='slds-grid slds-wrap'>
+                            <div class='slds-col slds-size_1-of-1 slds-m-left_x-small'>
+                                    <!--inner grid-->
+                                <div class='slds-grid'>
+                                    <div class='slds-col slds-size_10-of-12'>
+                                        <div class=" slds-m-bottom_medium">
+                                            <p>{x.Name}</p>
+                                            <p class="prodCode slds-p-top_xxx-small">{x.ProductCode}</p>
+                                        </div>
+                                    </div>
+                                    <div class='slds-col slds-size_1-of-12 slds-m-left_x-small slds-m-top_x-small'>
+                                        <figure class='slds-float_right'>
+                                            <lightning-icon icon-name={x.icon} size="small" name={x.Id} 
+                                                onclick={findProduct} alternative-text="Add Product" title="Add Products"></lightning-icon>
+                                                        <figcaption>{x.title}</figcaption>
+                                        </figure>
+                                    </div> 
+                                </div> 
+                            <!--finish inner grid -->
+                            </div>
+        
+                        <!-- Unit Price -->
+                                <div class='slds-col slds-size_1-of-3 slds-m-left_x-small'>
+                                    <lightning-input value={x.Floor_Price__c} type='number' formater='currency' step="0.01"
+                                                    label='Floor Price' readonly></lightning-input>                                            
+                                </div>
+                                <div class='slds-col slds-size_1-of-3 slds-m-left_x-small'>
+                                <lightning-input value={x.Product__r.Floor_Type__c} type='text'
+                                                label='Floor Type' readonly></lightning-input>
+                                </div>
+                                <div class='slds-col slds-size_1-of-3 slds-m-left_x-small'>
+                                    <lightning-input value={x.onhand} type="number"
+                                                    label='Qty on Hand' readonly></lightning-input>
+                                </div>
+                                <div class='slds-col slds-size_1-of-3 slds-m-left_x-small'>
+                                    <lightning-input value={x.status} type="text"
+                                                    label='Product Status' readonly></lightning-input>
+                                </div>
+                        </div>
+                    </lightning-layout-item>
+        
+                    </template>
+                </template>
+                <template if:false={showProducts}>
+                    <template for:each={promoBack} for:item='x'>
+                        <lightning-layout-item size="12" key={x.Id} name={x.ProductCode} class="slds-box slds-p-around_none 
+                        slds-m-top_x-small slds-m-bottom_medium slds-m-horizontal_none">
+                        <div class='slds-grid slds-wrap'>
+                            
                                 <div class='slds-col slds-size_10-of-12'>
-                                    <div class=" slds-m-bottom_medium">
-                                        <p>{x.Name}</p>
-                                        <p class="prodCode slds-p-top_xxx-small">{x.ProductCode}</p>
+                                    <div class=" slds-m-bottom_medium comments">
+                                        <p>{x.Name}</p> 
+                                    </div>
+                                    <div class="expDate">
+                                        Expires: {x.experDate} -&nbsp; <span class={x.dayClass}>{x.experDays} days left</span> 
+                                    </div>
+                                    <div class="commentHeader">
+                                        <b>Comments:</b>
+                                    </div>
+                                    <div class="comments">
+                                
+                                        {x.Description__c}
                                     </div>
                                 </div>
-                                <div class='slds-col slds-size_1-of-12 slds-m-left_x-small slds-m-top_x-small'>
-                                    <figure class='slds-float_right'>
-                                        <lightning-icon icon-name={x.icon} size="small" name={x.Id} 
-                                            onclick={findProduct} alternative-text="Add Product" title="Add Products"></lightning-icon>
-                                                    <figcaption>{x.title}</figcaption>
-                                    </figure>
-                                </div> 
-                            </div> 
-                        <!--finish inner grid -->
+
+                            
+                            <div class='slds-col slds-size_2-of-12' >
+                                <lightning-button-icon icon-name={x.btnName}  variant={x.btnVariant} size="small" 
+                                alternative-text="add" name={x.Id} onclick={addPromo} data-label={x.Promo_Discount__c}></lightning-button-icon>
+                            </div>
                         </div>
-    
-                    <!-- Unit Price -->
-                            <div class='slds-col slds-size_1-of-3 slds-m-left_x-small'>
-                                <lightning-input value={x.Floor_Price__c} type='number' formater='currency' step="0.01"
-                                                 label='Floor Price' readonly></lightning-input>                                            
-                            </div>
-                            <div class='slds-col slds-size_1-of-3 slds-m-left_x-small'>
-                            <lightning-input value={x.Product__r.Floor_Type__c} type='text'
-                                             label='Floor Type' readonly></lightning-input>
-                            </div>
-                            <div class='slds-col slds-size_1-of-3 slds-m-left_x-small'>
-                                <lightning-input value={x.onhand} type="number"
-                                                 label='Qty on Hand' readonly></lightning-input>
-                            </div>
-                            <div class='slds-col slds-size_1-of-3 slds-m-left_x-small'>
-                                <lightning-input value={x.status} type="text"
-                                                 label='Product Status' readonly></lightning-input>
-                            </div>
-                    </div>
-                </lightning-layout-item>
-    
+                        </lightning-layout-item>
+                    </template>
                 </template>
             </lightning-layout>
             
-            <!--dont let first results push view port-->
+            <!-- dont let first results push view port-->
         </div>
         </div>
        
@@ -89,5 +138,8 @@
         <template if:false={loaded}>
             <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
         </template>
+        <footer class="slds-modal__footer slds-align_absolute-center">
+            <button class="slds-button slds-button_brand" onclick={handleDone} title="Done">Done</button>
+        </footer>
         </div>
     </template>

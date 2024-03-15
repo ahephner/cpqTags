@@ -14,4 +14,9 @@ export default class MobileSearchContainer extends LightningElement {
         this.dispatchEvent(new CustomEvent('close'));
         
     }
+
+    handleNewProduct(pkg){
+        
+    }
+
 }

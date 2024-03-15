@@ -6,3 +6,24 @@
 .prodCode{
   font:small-caption
 }
+
+.expDate{
+  margin-left: 3%;
+  margin-bottom: .4rem;
+}
+.commentHeader{
+  margin-left: 3%;
+}
+
+.comments{
+  margin-left: 3%;
+}
+
+.redClass{
+  color: #cc0000;
+}
+
+.btn-name{
+  display:flex;
+  margin-bottom: .4rem;
+}

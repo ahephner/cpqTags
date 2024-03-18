@@ -5,6 +5,9 @@ import wrapSearch from '@salesforce/apex/cpqApexTags.getDetails';
 import getLastPaid from '@salesforce/apex/cpqApex.getLastPaid'; 
 import getLastQuote from '@salesforce/apex/cpqApex.getLastQuote';
 import getInventory from '@salesforce/apex/cpqApex.getInventory';
+import createQueries from '@salesforce/apex/searchQueries.createQueries';
+import queryType from '@salesforce/apex/lwcHelper.getRecordTypeId';
+import wareHouses from '@salesforce/apex/quickPriceSearch.getWarehouse';
 import onLoadGetInventory from '@salesforce/apex/cpqApex.onLoadGetInventory';
 import getProducts from '@salesforce/apex/cpqApex.getProducts';
 import inCounts from '@salesforce/apex/cpqApex.inCounts';
@@ -20,8 +23,12 @@ import SHIPCHARGE from '@salesforce/schema/Opportunity.Shipping_Total__c';
 import STAGE from '@salesforce/schema/Opportunity.StageName';
 import RUP_PROD from '@salesforce/schema/Opportunity.RUP_Selected__c';
 import DELIVERYDATE from '@salesforce/schema/Opportunity.Delivery_Date_s_Requested__c';
+//PROMO 
+import promoAdd from '@salesforce/apex/cpqApexTags.promoDetails';
 import {mergeInv,mergeLastPaid, lineTotal, onLoadProducts , newInventory, handleWarning,updateNewProducts, mergeLastQuote, 
-    getTotals, roundNum,totalChange, checkPricing, getShipping, allInventory, checkRUP, sortArray, removeLineItem} from 'c/mh2'
+    getTotals, roundNum,totalChange, checkPricing, getShipping, allInventory, checkRUP, sortArray, removeLineItem} from 'c/mh2';
+import{setOPMetric} from 'c/helper';
+import {addSingleKey} from 'c/tagHelper'
 import { FlowNavigationNextEvent,FlowAttributeChangeEvent, FlowNavigationBackEvent  } from 'lightning/flowSupport';
 
 const fields = [SHIPCHARGE, RUP_PROD, ACC_ID, WAREHOUSE,PB_ID, SHIP_TYPE, STAGE, DELIVERYDATE];
@@ -71,6 +78,7 @@ export default class MobileProdSelected extends LightningElement {
     //for ordering products on the order. This will be set to the last Line_Order__c # on load or set at 0 on new order;
     lineOrderNumber = 0; 
     hasRendered = true;
+    queryRecordType
 
     connectedCallback() {
         //console.log(1, this.shipType);
@@ -90,6 +98,24 @@ export default class MobileProdSelected extends LightningElement {
         }
 
     }
+            //get warehouse
+            @wire(wareHouses)
+            wiredWarehouse({ error, data }) {
+                if (data) {
+                    let back  = data.map((item, index) =>({
+                        ...item, 
+                        label:item.Name, 
+                        value:item.Id
+                    
+                    }))
+                    //back.unshift({label:'All', value:'All'})
+                    this.warehouseOptions = [...back]; 
+                    
+                } else if (error) {
+                    this.error = error;
+                    console.error(this.error)
+                }
+            } 
 
      //get record values
      @wire(getRecord, {recordId: '$recordId', fields:fields})
@@ -110,6 +136,13 @@ export default class MobileProdSelected extends LightningElement {
          }else if(error){
              console.log('error '+JSON.stringify(error));
              
+         }
+     }
+
+     @wire(queryType, ({objectName: 'Query__c', recTypeName: 'Opportunity'}))
+     wiredRec({error, data}){
+         if(data){
+             this.queryRecordType = data;
          }
      }
     //on load get products
@@ -180,7 +213,10 @@ export default class MobileProdSelected extends LightningElement {
     }
 
     handleAction(e){
-        let action = e.detail.value
+        //if you go back to the drop menu button uncomment
+        //let action = e.detail.value
+        //buttons use target
+        let action = e.target.value; 
         let index = this.prod.findIndex(x => x.Product2Id === e.target.name)
         
         switch (action) {
@@ -202,19 +238,27 @@ export default class MobileProdSelected extends LightningElement {
     //check if it's an agency product then which fields are editable at this point
     edit(index){
         if(this.prod[index].Agency__c && this.prod[index].editQTY === true){
-             this.prod[index].editQTY = false;   
+             this.prod[index].editQTY = false;  
+             this.prod[index].btnVar = 'success';
+             this.prod[index].btnLabel = 'Close'; 
         }else if(this.prod[index].Agency__c && this.prod[index].editQTY === false){
-             this.prod[index].editQTY = true; 
+             this.prod[index].editQTY = true;
+             this.prod[index].btnVar = 'destructive';
+             this.prod[index].btnLabel = 'Edit'; 
         }else if(this.prod[index].readOnly === false && this.prod[index].showInfo === false){
              this.prod[index].readOnly = true;
              this.prod[index].editQTY = true;
+             this.prod[index].btnVar = 'destructive';
+             this.prod[index].btnLabel = 'Edit';
         }else if(this.prod[index].readOnly === false && this.prod[index].showInfo === true){
              this.prod[index].showInfo = false; 
              this.prod[index].readOnly = false;
              this.prod[index].editQTY = false;  
         }else{
              this.prod[index].readOnly = false;
-             this.prod[index].editQTY = false; 
+             this.prod[index].editQTY = false;
+             this.prod[index].btnVar = 'success';
+             this.prod[index].btnLabel = 'Close'; 
         }  
     }
 
@@ -228,11 +272,17 @@ export default class MobileProdSelected extends LightningElement {
         for (let index = 0; index < this.prod.length; index++){
              if(this.prod[index].Agency__c && this.prod[index].editQTY === true){
                  this.prod[index].editQTY = false;   
+                 this.prod[index].btnVar = 'success';
+                 this.prod[index].btnLabel = 'Close'; 
              }else if(this.prod[index].Agency__c && this.prod[index].editQTY === false){
                  this.prod[index].editQTY = true; 
+                 this.prod[index].btnVar = 'destructive';
+                 this.prod[index].btnLabel = 'Edit';
              }else if(this.prod[index].readOnly === false && this.prod[index].showInfo === false){
                  this.prod[index].readOnly = true;
                  this.prod[index].editQTY = true;
+                 this.prod[index].btnVar = 'destructive';
+                 this.prod[index].btnLabel = 'Edit';
              }else if(this.prod[index].readOnly === false && this.prod[index].showInfo === true){
                  this.prod[index].showInfo = false; 
                  this.prod[index].readOnly = false;
@@ -240,9 +290,14 @@ export default class MobileProdSelected extends LightningElement {
              }else{
                  this.prod[index].readOnly = false;
                  this.prod[index].editQTY = false; 
+                 this.prod[index].btnVar = 'success';
+                 this.prod[index].btnLabel = 'Close'; 
          }
             
         }
+    }
+    handleToggleSection(event){
+        console.log(event.detail.openSections)
     }
 //show qty on hand 
     info(index){
@@ -439,7 +494,8 @@ handleOrderSort(item){
         let shipTotal = this.prod.filter(y => y.ProductCode.includes('SHIPPING'));
         //check if there are Restricted Use Products on the order list
         let rupProds = checkRUP(this.prod);
-        createProducts({olList: this.prod, oppId: this.recordId})
+        
+        createProducts({olList: this.prod, oppId: this.recordId, accId: this.accountId})
         .then(result => {
             let back = updateNewProducts(newProduct, result);
             this.prod =[...alreadyThere, ...back]; 
@@ -448,6 +504,10 @@ handleOrderSort(item){
             this.total = this.orderTotal(this.prod)
             this.showSpinner = false; 
             alert('Products Saved!')
+        }).then(()=>{
+            let saveQ = createQueries({queryList: this.metricsArray});
+            this.metricsArray = [];
+            //this.metricsPromo = [];
         }).then(()=>{
             let shipCharge = getShipping(shipTotal);
             
@@ -602,6 +662,9 @@ handleOrderSort(item){
                         Ship_Weight__c: this.shipWeight,
                         sgn: this.sgn,
                         resUse: this.rupProd,
+                        btnVar: 'destructive',
+                        btnLabel: 'Edit', 
+                        labelName:`${this.productName} - ${this.productCode}`,
                         levels:'Lvl 1 $'+this.levelOne + ' Lvl 2 $'+ this.levelTwo,
                         goodPrice: true,
                         Line_Order__c: this.lineOrderNumber,
@@ -642,6 +705,9 @@ handleOrderSort(item){
                         Ship_Weight__c: this.shipWeight,
                         sgn: this.sgn,
                         resUse: this.rupProd,
+                        btnVar: 'destructive',
+                        btnLabel: 'Edit', 
+                        labelName:`${this.productName} - ${this.productCode}`,
                         levels:'Lvl 1 $'+this.levelOne + ' Lvl 2 $'+ this.levelTwo,
                         goodPrice: true,
                         Line_Order__c: this.lineOrderNumber,
@@ -657,20 +723,23 @@ handleOrderSort(item){
     //New product selected from mobile search
     //!!Unit Cost is Unit Price on pbe. That is the api name. 
     //The lable is list price. 
-    handleNewProduct(prod){
+    async  handleNewProduct(prod){
         
-      this.productCode = prod.detail[1]; 
+            this.productCode = prod.detail.prodCode; 
         
-        //check if they already have it on the order. We can't have multiple same sku's on a bill
-        let alreadyThere = this.prod.findIndex(prod => prod.ProductCode === this.productCode);
-        //console.log('already there '+ alreadyThere)
-        if(alreadyThere < 0){
-            this.productId = prod.detail[0]; 
-            this.searchWrap();
-            this.wasEdited = true; 
-        }else{
-            return; 
-        }
+            //check if they already have it on the order. We can't have multiple same sku's on a bill
+            let alreadyThere = this.prod.findIndex(prod => prod.ProductCode === this.productCode);
+            //console.log('already there '+ alreadyThere)
+            if(alreadyThere < 0){
+                this.productId = prod.detail.prodId;
+                
+                let one = await this.searchWrap();
+                //add tag to create query entry for metrics
+                let two = await this.handleTagMetrics(prod.detail)
+                this.wasEdited = true; 
+            }else{
+                return; 
+            }
     }
 
     addShip(){
@@ -707,6 +776,9 @@ handleOrderSort(item){
             //tips: this.agency ? 'Agency' : 'Cost: $'+this.unitCost +' Company Last Paid: $' +this.companyLastPaid + ' Code ' +this.productCode,
             goodPrice: true,
             manLine: false,
+            btnVar: 'destructive',
+            labelName:'ATS SHIPPING - ATS SHIPPING',
+            btnLabel: 'Edit', 
             Line_Order__c: this.lineOrderNumber,
             url:`https://advancedturf.lightning.force.com/lightning/r/01t2M0000062XwhQAE/related/ProductItems/view`,
             OpportunityId: this.recordId
@@ -744,6 +816,9 @@ handleOrderSort(item){
             //tips: this.agency ? 'Agency' : 'Cost: $'+this.unitCost +' Company Last Paid: $' +this.companyLastPaid + ' Code ' +this.productCode,
             goodPrice: true,
             manLine: false,
+            labelName:'ATS SHIPPING - SPLIT SHIPMENTS',
+            btnVar: 'destructive',
+            btnLabel: 'Edit', 
             url:`https://advancedturf.lightning.force.com/lightning/r/01t2M0000062XwhQAE/related/ProductItems/view`,
             Line_Order__c: this.lineOrderNumber,
             OpportunityId: this.recordId
@@ -808,6 +883,9 @@ handleOrderSort(item){
                     Ship_Weight__c: this.shipWeight,
                     sgn: this.sgn,
                     resUse: this.rupProd,
+                    btnVar: 'destructive',
+                    btnLabel: 'Edit', 
+                    labelName:`${this.productName} - ${this.productCode}`,
                     levels:'Lvl 1 $'+this.levelOne + ' Lvl 2 $'+ this.levelTwo,
                     goodPrice: true,
                     Line_Order__c: this.lineOrderNumber,
@@ -849,6 +927,9 @@ handleOrderSort(item){
                     Ship_Weight__c: this.shipWeight,
                     sgn: this.sgn,
                     resUse: this.rupProd,
+                    btnVar: 'destructive',
+                    btnLabel: 'Edit', 
+                    labelName:`${this.productName} - ${this.productCode}`,
                     levels:'Lvl 1 $'+this.levelOne + ' Lvl 2 $'+ this.levelTwo,
                     goodPrice: true,
                     Line_Order__c: this.lineOrderNumber,
@@ -936,40 +1017,40 @@ allowSave(){
     }
 
     //warehouse information
-    get warehouseOptions(){
+    // get warehouseOptions(){
         
-        return [
-            {label:'All', value:'All'},
-            {label: '105 | Noblesville', value:'1312M000000PB0ZQAW'}, 
-            {label:'115 | ATS Ingalls', value:'1312M00000001nsQAA'},
-            {label:'125 | ATS Lebanon (Parts)', value:'1312M00000001ntQAA'},
-            {label:'200 | ATS Louisville', value:'1312M00000001nuQAA'},
-            {label:'250 | ATS Florence', value:'1312M00000001nvQAA'},
-            {label:'270 | ATS Winston-Salem', value:'1312M00000001nwQAA'},
-            {label:'310 | ATS Tomball', value:'1312M000000PB6AQAW'},
-            {label:'360 | ATS Nashville', value:'1312M00000001nxQAA'},
-            {label:'400 | ATS Columbus', value:'1312M00000001nyQAA'},
-            {label:'415 | ATS Sharonville', value:'1312M00000001nzQAA'},
-            {label:'440 | ATS Lewis Center', value:'1312M00000001o0QAA'},
-            {label:'450 | ATS Brecksville', value:'1312M00000001o1QAA'},
-            {label:'470 | ATS Boardman', value:'1312M00000001o2QAA'},
-            {label:'510 | ATS Travis City', value:'1312M00000001o3QAA'},
-            {label:'520 | ATS Farmington Hills', value:'1312M00000001o4QAA'},
-            {label:'600 | ATS - Elkhart', value:'1312M00000001o5QAA'},
-            {label:'710 | ATS - St. Peters', value:'1312M00000001o6QAA'},
-            {label:'720 | ATS - Cape Girardeau', value:'1312M00000001o7QAA'},
-            {label:'730 | ATS - Columbia', value:'1312M00000001o8QAA'},
-            {label:'770 | ATS - Riverside', value:'1312M00000001o9QAA'},
-            {label:'790 | ATS - Springfield', value:'1312M0000004D7IQAU'},
-            {label:'820 | ATS - Wheeling', value:'13175000000L3CnAAK'},
-            {label:'850 | ATS - Madison', value:'1312M00000001oAQAQ'},
-            {label:'860 | ATS - East Peoria', value:'1312M000000PB2BQAW'},
-            {label:'960 | ATS - Monroeville', value:'1312M00000001oBQAQ'},
-            {label:'980 | ATS - Ashland', value:'1312M00000001oCQAQ'},
-            {label:'999 | ATS - Fishers', value:'1312M000000PB3FQAW'}
+    //     return [
+    //         {label:'All', value:'All'},
+    //         {label: '105 | Noblesville', value:'1312M000000PB0ZQAW'}, 
+    //         {label:'115 | ATS Ingalls', value:'1312M00000001nsQAA'},
+    //         {label:'125 | ATS Lebanon (Parts)', value:'1312M00000001ntQAA'},
+    //         {label:'200 | ATS Louisville', value:'1312M00000001nuQAA'},
+    //         {label:'250 | ATS Florence', value:'1312M00000001nvQAA'},
+    //         {label:'270 | ATS Winston-Salem', value:'1312M00000001nwQAA'},
+    //         {label:'310 | ATS Tomball', value:'1312M000000PB6AQAW'},
+    //         {label:'360 | ATS Nashville', value:'1312M00000001nxQAA'},
+    //         {label:'400 | ATS Columbus', value:'1312M00000001nyQAA'},
+    //         {label:'415 | ATS Sharonville', value:'1312M00000001nzQAA'},
+    //         {label:'440 | ATS Lewis Center', value:'1312M00000001o0QAA'},
+    //         {label:'450 | ATS Brecksville', value:'1312M00000001o1QAA'},
+    //         {label:'470 | ATS Boardman', value:'1312M00000001o2QAA'},
+    //         {label:'510 | ATS Travis City', value:'1312M00000001o3QAA'},
+    //         {label:'520 | ATS Farmington Hills', value:'1312M00000001o4QAA'},
+    //         {label:'600 | ATS - Elkhart', value:'1312M00000001o5QAA'},
+    //         {label:'710 | ATS - St. Peters', value:'1312M00000001o6QAA'},
+    //         {label:'720 | ATS - Cape Girardeau', value:'1312M00000001o7QAA'},
+    //         {label:'730 | ATS - Columbia', value:'1312M00000001o8QAA'},
+    //         {label:'770 | ATS - Riverside', value:'1312M00000001o9QAA'},
+    //         {label:'790 | ATS - Springfield', value:'1312M0000004D7IQAU'},
+    //         {label:'820 | ATS - Wheeling', value:'13175000000L3CnAAK'},
+    //         {label:'850 | ATS - Madison', value:'1312M00000001oAQAQ'},
+    //         {label:'860 | ATS - East Peoria', value:'1312M000000PB2BQAW'},
+    //         {label:'960 | ATS - Monroeville', value:'1312M00000001oBQAQ'},
+    //         {label:'980 | ATS - Ashland', value:'1312M00000001oCQAQ'},
+    //         {label:'999 | ATS - Fishers', value:'1312M000000PB3FQAW'}
 
-        ];
-    }
+    //     ];
+    // }
     //on load get warehouse value
     get selectedObj(){
         let label;
@@ -1007,4 +1088,137 @@ allowSave(){
             console.log(JSON.stringify('errors -> '+error))
         }
     }
+    metricsArray = []
+    //will be moved to a mixins or helper
+    //ok with hardcoding Device_Type__c as this will only ever be used for desktop. 
+    handleTagMetrics(x){
+        //console.log(this.queryRecordType, 'aj');
+        
+        this.metricsArray = [
+            ...this.metricsArray, {
+            sObjectType: 'Query__c',
+            RecordTypeId: this.queryRecordType,
+            Device_Type__c: 'Phone',
+            Opportunity__c: this.recordId,
+            Term__c: x.searchedTerm,
+            Query_Size__c: x.searchSize,
+            Search_Index__c: x.searchIndex,
+            Product: x.prodId,
+            Tag__c: x.tagId,
+            ATS_Score__c: x.tagScore
+        }] 
+    } 
+    metricsPromo = []
+    handlePromoMetrics(x){
+        this.metricsPromo = [
+            ...this.metricsPromo,{
+                sObjectType: "Query__c",
+                //recordTypeId: '012Ec0000002BozIAE',
+                Opportunity__c: this.recordId,
+                Search_Label__c: x
+            }
+        ]
+    }   
+
+    metricsPromo = []
+    handlePromoMetrics(x){
+        this.metricsPromo = [
+            ...this.metricsPromo,{
+                sObjectType: "Query__c",
+                //recordTypeId: '012Ec0000002BozIAE',
+                Opportunity__c: this.recordId,
+                Search_Label__c: x
+            }
+        ]
+    }   
+//Check for duplicate products on promo adds
+    promoDupCheck(x){
+        let alreadyThere = this.prod.findIndex(prod => prod.ProductCode === x);
+        return alreadyThere; 
+    }
+
+    //PROMO 
+    discountPercent; 
+    async  handlePromoSelection(mess){
+            let promoId = mess.detail.promoId;
+            this.discountPercent = mess.detail.discount; 
+             
+             
+            try {
+                
+                let results = await promoAdd({pId: promoId, locationId: this.warehouse, accId:undefined , pc:this.productCode , recId: this.recordId, priceBookId: this.pbId});
+                let merged = await addSingleKey(results.promoProduct,"Product2Id", results.qtyTag, "Product__c", "Quantity__c" )
+                
+                for(let i=0; i < merged.length; i++){
+                    let dupCheck = this.promoDupCheck(merged[i].Product2.ProductCode);
+                    if(dupCheck>=0){
+                        continue; 
+                    }else{
+                        let ind = await this.setFieldValues(merged[i]);
+                        this.productCode = merged[i].Product2.ProductCode
+                        console.log(typeof this.productCode)
+                        console.log(this.productCode)
+                        this.prod = [
+                            ...this.prod, {
+                                sObjectType: 'OpportunityLineItem',
+                                PricebookEntryId: this.pbeId,
+                                Id: '',
+                                Product2Id: this.productId,
+                                agency: this.agency,
+                                name: this.productName,
+                                ProductCode: this.productCode,
+                                Ship_Weight__c: this.unitWeight,
+                                Quantity: merged[i].Qty > 0 ? merged[i].Qty : 1,
+                                UnitPrice: this.agency ? this.fPrice: this.levelTwo,
+                                floorPrice: this.fPrice,
+                                lOne: this.agency? this.fPrice : this.levelOne,
+                                lTwo: this.levelTwo,
+                                readOnly: this.agency ? true : false,
+                                lastPaid: 0,
+                                lastMarg: 0, 
+                                docDate: 'First Purchase', 
+                                CPQ_Margin__c: this.agency?'':this.levelTwoMargin,
+                                Cost__c: this.unitCost,
+                                displayCost: this.agency ? 'Agency' : this.unitCost,
+                                TotalPrice: this.agency? this.fPrice : this.levelTwo,
+                                Discount: this.lineDiscount ? this.lineDiscount : '',
+                                wInv: !this.invCount ? 0 :this.invCount.Quantity_Available__c,
+                                showLastPaid: true,
+                                lastQuoteAmount: !this.lastQuote ? 0 : this.lastQuote.Last_Quote_Price__c,
+                                lastQuoteMargin: !this.lastQuote ? 0 : this.lastQuote.Last_Quote_Margin__c,
+                                lastQuoteDate: !this.lastQuote ? '' : this.lastQuote.Quote_Date__c,
+                                flrText: 'flr price $'+ this.fPrice,
+                                lOneText: 'lev 1 $'+this.levelOne, 
+                                companyLastPaid: this.companyLastPaid,
+                                palletConfig: this.palletConfig,
+                                sgn: this.sgn,
+                                //tips: this.agency ? 'Agency' : 'Cost: $'+this.unitCost +' Company Last Paid $' +this.companyLastPaid + ' Code ' +this.productCode,
+                                goodPrice: true,
+                                resUse: this.resUse, 
+                                labelName:`${this.productName} - ${this.productCode}`,
+                                manLine: this.productCode.includes('MANUAL CHARGE') ? true : false,
+                                Line_Order__c: this.lineOrderNumber,
+                                lastThirty:  '0',
+                                url:`https://advancedturf.lightning.force.com/lightning/r/${this.productId}/related/ProductItems/view`,
+                                OpportunityId: this.recordId
+                            }
+                        ]
+                        
+                    }
+                }
+                 
+
+
+            
+            
+            
+            this.loaded = true; 
+            //console.log(`The discount to apply ${this.discountPercent}%`)
+                this.handlePromoMetrics(promoId);
+            } catch (error) {
+                console.error(error)
+                alert(error); 
+            }
+            
+        }
 }

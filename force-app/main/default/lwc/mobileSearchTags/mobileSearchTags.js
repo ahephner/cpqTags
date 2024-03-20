@@ -151,7 +151,7 @@ export default class MobileSearchTags extends LightningElement{
                 let once = tags.length> 1 ? await uniqVals(tags) : tags;
                 this.searchSize = once.length;
                 //this group results by stock status then score
-                once.sort((a,b)=>b.Stock_Status__c.localeCompare(a.Stock_Status__c) || b.ATS_Score__c - a.ATS_Score__c,);
+                once.sort((a,b)=>b.Stock_Status__c.localeCompare(a.Stock_Status__c) || b.ATS_Score__c - a.ATS_Score__c || !Number.isFinite(a.ATS_Score__c) - !Number.isFinite(b.ATS_Score__c));
                 this.prod = await once.map((item, index)=>({
                     ...item, 
                     Name: item.Product__r.Temp_Unavailable__c ? item.Product_Name__c + ' - ' +item.Product__r.Temp_Mess__c : item.Product_Name__c,

@@ -178,7 +178,7 @@ export default class ProdSearchTags extends LightningElement {
                 
                 let once = tags.length> 1 ? await uniqVals(tags) : tags;
                 this.searchSize = once.length; 
-                once.sort((a,b)=>b.Stock_Status__c.localeCompare(a.Stock_Status__c) || b.ATS_Score__c - a.ATS_Score__c,)
+                once.sort((a,b)=>b.Stock_Status__c.localeCompare(a.Stock_Status__c) || b.ATS_Score__c - a.ATS_Score__c || !Number.isFinite(a.ATS_Score__c) - !Number.isFinite(b.ATS_Score__c))
                 console.table(once)
                 this.prod = await once.map((item, index) =>({
                                     ...item, 

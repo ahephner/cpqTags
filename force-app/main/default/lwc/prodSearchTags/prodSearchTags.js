@@ -169,7 +169,8 @@ export default class ProdSearchTags extends LightningElement {
                     this.searchQuery = buildSearchInfo.builtTerm;  
                     searchRacks = buildSearchInfo.wareHouseSearch; 
                     backUpQuery = buildSearchInfo.backUpQuery
-                
+                console.log(1, this.searchQuery);
+                console.log(2, backUpQuery)
                 let data = await searchTag({searchKey: this.searchQuery, searchWareHouse:searchRacks, backUpSearch: backUpQuery}) 
                 //here we split up the returned wrapper. 
                 //access the tags object using data.tags and the warehouse search using data.wareHouseFound

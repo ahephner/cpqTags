@@ -1,10 +1,13 @@
 //Goes with prodSeach!!!!!
 //has to be a way to call apex on the new products selected here
 import { LightningElement, api, wire, track } from 'lwc';
-import wrapSearch from '@salesforce/apex/cpqApexTags.getDetails';
+import wrapSearch from '@salesforce/apex/omsCPQAPEX.getDetailsPricing';
+//get price books the account has access too. 
+import getPriceBooks from '@salesforce/apex/getPriceBooks.getPriceBookIds';
 import promoAdd from '@salesforce/apex/cpqApexTags.promoDetails';
 import createQueries from '@salesforce/apex/searchQueries.createQueries';
-import getProducts from '@salesforce/apex/cpqApex.getProducts';
+//import getProducts from '@salesforce/apex/cpqApex.getProducts';
+import getProducts from '@salesforce/apex/omsCPQAPEX.getProducts';
 import onLoadGetInventory from '@salesforce/apex/cpqApex.onLoadGetInventory';
 import onLoadGetLastPaid from '@salesforce/apex/cpqApex.onLoadGetLastPaid';
 import onLoadGetLevels from '@salesforce/apex/cpqApex.getLevelPricing';
@@ -16,7 +19,7 @@ import { refreshApex } from '@salesforce/apex';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { APPLICATION_SCOPE,MessageContext, publish, subscribe,  unsubscribe} from 'lightning/messageService';
 import Opportunity_Builder from '@salesforce/messageChannel/Opportunity_Builder__c';
-import createProducts from '@salesforce/apex/cpqApex.createProducts';
+import createProducts from '@salesforce/apex/omsCPQAPEX.createProducts';
 import {getRecord, getFieldValue, updateRecord, getRecordNotifyChange } from 'lightning/uiRecordApi';
 import { deleteRecord} from 'lightning/uiRecordApi';
 import ACC from '@salesforce/schema/Opportunity.AccountId';
@@ -32,7 +35,8 @@ import DISCOUNT from '@salesforce/schema/Opportunity.Discount_Percentage__c';
 import RUP_PROD from '@salesforce/schema/Opportunity.RUP_Selected__c'; 
 import {mergeInv,mergeLastPaid, lineTotal, onLoadProducts , newInventory,updateNewProducts, getTotals, getCost,roundNum, allInventory, 
     checkPricing ,getShipping, getManLines, setMargin, mergeLastQuote, setOPMetric, checkRUP, sortArray,removeLineItem, loadCheck} from 'c/helper'
-import {addSingleKey} from 'c/tagHelper'
+import {addSingleKey} from 'c/tagHelper';
+import { onLoadProductsOMS} from 'c/helperOMS';
 const FIELDS = [ACC, STAGE, WAREHOUSE];
 export default class ProdSelected extends LightningElement {
     @api recordId; 
@@ -67,6 +71,7 @@ export default class ProdSelected extends LightningElement {
     shippingAddress;
     invCount;
     lastQuote
+    bestPrice; 
     error;
     goodPricing = true;   
     hasRendered = true;
@@ -84,7 +89,8 @@ export default class ProdSelected extends LightningElement {
     pryingEyes = false
     numbOfManLine = 0
     eventListening = false; 
-    queryRecordType; 
+    queryRecordType;
+    avalPriceBooks; 
     @track selection = [];
     
     //for ordering products on the order. This will be set to the last Line_Order__c # on load or set at 0 on new order;
@@ -127,6 +133,25 @@ export default class ProdSelected extends LightningElement {
         this.loadProducts(); 
         
     }
+
+    //get pricebooks
+    @wire(getPriceBooks,{accountId: '$accountId'})
+    wiredWarehouse({error, data}){
+        if(data){
+            
+            //no double values and assign the standard price book up front; 
+            let list = new Set(["01s410000077vSKAAY"])
+            for(let i = 0; i<data.length; i++){
+                list.add(data[i].Pricebook2Id)
+            }
+            this.avalPriceBooks = [...list]; 
+            console.log('here pricebooks --> ', this.avalPriceBooks)
+        }else if(error){
+            this.avalPriceBooks = ["01s410000077vSKAAY"];
+            console.warn('error loading price books assigned standard price books')
+        }
+    }
+
     renderedCallback(){
         if(this.selection.length>0 && this.hasRendered){
             let startCheck = loadCheck(this.selection); 
@@ -293,16 +318,18 @@ priceCheck(){
             try {
                 this.loaded = false;
             if(this.accountId){
-                result = await wrapSearch({pId:this.productId , locationId: this.warehouse, accId:this.accountId , pc:this.productCode , recId: this.recordId, priceBookId: this.pbId});
+                result = await wrapSearch({pId:this.productId , locationId: this.warehouse, accId:this.accountId , 
+                                          pc:this.productCode , recId: this.recordId, priceBookId: this.pbId, priceBookIds: this.avalPriceBooks});
             }else{
                 
-                result = await wrapSearch({pId:this.productId , locationId: this.warehouse, accId:undefined , pc:this.productCode , recId: this.recordId, priceBookId: this.pbId});
+                result = await wrapSearch({pId:this.productId , locationId: this.warehouse, accId:undefined , 
+                                          pc:this.productCode , recId: this.recordId, priceBookId: this.pbId, priceBookIds: this.avalPriceBooks});
             }
             this.setFieldValues(result[0].selectedProduct);
             this.invCount = result[0].inventory; 
             this.newProd = result[0].lastPaid;
             this.lastQuote = result[0].lastQuote; 
-                    
+            this.bestPrice = result[0].bestPrice;         
         if(this.newProd != null){
 
             this.selection = [
@@ -311,12 +338,17 @@ priceCheck(){
                     Id: '',
                     PricebookEntryId: this.pbeId,
                     Product2Id: this.productId,
+                    altPriceBookEntryId__c:this.bestPrice.Id,
+                    altPriceBookId__c: this.bestPrice.Pricebook2Id,
+                    altPriceBookName__c: this.bestPrice.Pricebook2.Name, 
                     agency: this.agency,
                     name: this.productName,
                     ProductCode: this.productCode,
                     Ship_Weight__c: this.unitWeight,
+                    Description:`Best PriceBook ${this.bestPrice.Pricebook2.Name}`,
                     Quantity: 1,
-                    UnitPrice: this.agency ? this.fPrice: this.levelTwo,
+                    //UnitPrice: this.agency ? this.fPrice: this.levelTwo,
+                    UnitPrice: this.bestPrice.UnitPrice,
                     floorPrice: this.fPrice,
                     lOne: this.agency? this.fPrice : this.levelOne,
                     lTwo: this.levelTwo, 
@@ -359,9 +391,14 @@ priceCheck(){
                     agency: this.agency,
                     name: this.productName,
                     ProductCode: this.productCode,
+                    altPriceBookEntryId__c:this.bestPrice.Id,
+                    altPriceBookId__c: this.bestPrice.Pricebook2Id,
+                    altPriceBookName__c: this.bestPrice.Pricebook2.Name,
                     Ship_Weight__c: this.unitWeight,
+                    Description:`Best PriceBook ${this.bestPrice.Pricebook2.Name}`,
                     Quantity: 1,
-                    UnitPrice: this.agency ? this.fPrice: this.levelTwo,
+                    //UnitPrice: this.agency ? this.fPrice: this.levelTwo,
+                    UnitPrice: this.bestPrice.UnitPrice,
                     floorPrice: this.fPrice,
                     lOne: this.agency? this.fPrice : this.levelOne,
                     lTwo: this.levelTwo,
@@ -1154,8 +1191,11 @@ priceCheck(){
         let inCode = new Set();
         let codes = [];
         try{
-            let results = await getProducts({oppId: this.recordId})
-            
+            //let results = await getProducts({oppId: this.recordId})
+            let infoBack = await getProducts({oppId: this.recordId})
+            let results = infoBack.itemsOnOrder;
+            let pricingInfo = infoBack.pricingInfo; 
+
             if(results.length === 0){                
                 return; 
             }else if(results){
@@ -1194,7 +1234,8 @@ priceCheck(){
             
             
             //IF THERE IS A PROBLEM NEED TO HANDLE THAT STILL!!!
-            this.selection = await onLoadProducts(mergedLevels, this.recordId); 
+            //this.selection = await onLoadProducts(mergedLevels, this.recordId); 
+            this.selection = await onLoadProductsOMS(mergedLevels, pricingInfo, this.recordId); 
             
             //get for ordering
             this.lineOrderNumber = isNaN((this.selection.at(-1).Line_Order__c + 1)) ? (this.selection.length + 1) : (this.selection.at(-1).Line_Order__c + 1);

@@ -65,9 +65,9 @@
  <lightning-accordion-section name="Pricing" label={item.labelName}>
 <div class='slds-grid slds-wrap'>    
         <div class='slds-col slds-size_1-of-2 slds-m-left_x-small slds-m-top_medium'>
-            <!-- <h2 class="slds-text-heading_medium slds-m-bottom_medium"></h2> -->
-                <!-- <p>{item.name}</p> 
-                <p class="prodCode slds-p-top_xxx-small">{item.ProductCode}</p> -->
+            <template if:true={item.difPrice}>
+                <p class="gunsUP">The unit price previously quoted is indicated under UnitPrice. A new unit price is now in effect, which is ${item.curUnitPrice}</p>
+            </template>
         </div>
             <!-- button group -->
             <div class='slds-col slds-size_1-of-3 slds-m-left_x-small'>

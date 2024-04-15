@@ -1,15 +1,19 @@
 import { LightningElement,api, track, wire } from 'lwc';
 import {getRecord, updateRecord, deleteRecord, getFieldValue } from 'lightning/uiRecordApi';
-import createProducts from '@salesforce/apex/cpqApex.createProducts';
-import wrapSearch from '@salesforce/apex/cpqApexTags.getDetails';
-import getLastPaid from '@salesforce/apex/cpqApex.getLastPaid'; 
-import getLastQuote from '@salesforce/apex/cpqApex.getLastQuote';
-import getInventory from '@salesforce/apex/cpqApex.getInventory';
+//import createProducts from '@salesforce/apex/cpqApex.createProducts';
+import createProducts from '@salesforce/apex/omsCPQAPEX.createProducts';
+import wrapSearch from '@salesforce/apex/omsCPQAPEX.getDetailsPricing';
+//get price books the account has access too. 
+import getPriceBooks from '@salesforce/apex/getPriceBooks.getPriceBookIds';
+//import getLastPaid from '@salesforce/apex/cpqApex.getLastPaid'; 
+//import getLastQuote from '@salesforce/apex/cpqApex.getLastQuote';
+//import getInventory from '@salesforce/apex/cpqApex.getInventory';
 import createQueries from '@salesforce/apex/searchQueries.createQueries';
 import queryType from '@salesforce/apex/lwcHelper.getRecordTypeId';
 import wareHouses from '@salesforce/apex/quickPriceSearch.getWarehouse';
 import onLoadGetInventory from '@salesforce/apex/cpqApex.onLoadGetInventory';
-import getProducts from '@salesforce/apex/cpqApex.getProducts';
+//import getProducts from '@salesforce/apex/cpqApex.getProducts';
+import getProducts from '@salesforce/apex/omsCPQAPEX.getProducts';
 import inCounts from '@salesforce/apex/cpqApex.inCounts';
 import onLoadGetLastPaid from '@salesforce/apex/cpqApex.onLoadGetLastPaid';
 import onLoadGetLevels from '@salesforce/apex/cpqApex.getLevelPricing';
@@ -28,6 +32,7 @@ import promoAdd from '@salesforce/apex/cpqApexTags.promoDetails';
 import {mergeInv,mergeLastPaid, lineTotal, onLoadProducts , newInventory, handleWarning,updateNewProducts, mergeLastQuote, 
     getTotals, roundNum,totalChange, checkPricing, getShipping, allInventory, checkRUP, sortArray, removeLineItem} from 'c/mh2';
 import{setOPMetric} from 'c/helper';
+import { mobileLoadProductsOMS} from 'c/helperOMS';
 import {addSingleKey} from 'c/tagHelper'
 import { FlowNavigationNextEvent,FlowAttributeChangeEvent, FlowNavigationBackEvent  } from 'lightning/flowSupport';
 
@@ -78,8 +83,9 @@ export default class MobileProdSelected extends LightningElement {
     //for ordering products on the order. This will be set to the last Line_Order__c # on load or set at 0 on new order;
     lineOrderNumber = 0; 
     hasRendered = true;
-    queryRecordType
-
+    queryRecordType;
+    avalPriceBooks; 
+    bestPrice; 
     connectedCallback() {
         //console.log(1, this.shipType);
         if(this.stage ==='Closed Won'|| this.stage === 'Closed Lost'){
@@ -90,6 +96,23 @@ export default class MobileProdSelected extends LightningElement {
         this.loadProducts(); 
         
     }
+        //get pricebooks
+        @wire(getPriceBooks,{accountId: '$accountId'})
+        wiredPriceBooks({error, data}){
+            if(data){
+                
+                //no double values and assign the standard price book up front; 
+                let list = new Set(["01s410000077vSKAAY"])
+                for(let i = 0; i<data.length; i++){
+                    list.add(data[i].Pricebook2Id)
+                }
+                this.avalPriceBooks = [...list]; 
+                console.log('here pricebooks --> ', this.avalPriceBooks)
+            }else if(error){
+                this.avalPriceBooks = ["01s410000077vSKAAY"];
+                console.warn('error loading price books assigned standard price books')
+            }
+        }
     renderedCallback(){
        //console.log(2, this.shipType);
         
@@ -156,8 +179,10 @@ export default class MobileProdSelected extends LightningElement {
         try{
             //console.log(this.oppId);
             
-            let results = await getProducts({oppId: this.recordId})
-            //console.log(1, results.length);
+            //let results = await getProducts({oppId: this.recordId})
+            let infoBack = await getProducts({oppId: this.recordId})
+            let results = infoBack.itemsOnOrder;
+            let pricingInfo = infoBack.pricingInfo;
             
             if(results.length < 1){
                 //console.log('should stop')
@@ -196,7 +221,9 @@ export default class MobileProdSelected extends LightningElement {
             
             
             //IF THERE IS A PROBLEM NEED TO HANDLE THAT STILL!!!
-            this.prod = await onLoadProducts(mergedLevels, this.recordId); 
+            
+            //this.prod = await onLoadProducts(mergedLevels, this.recordId); 
+            this.prod = await mobileLoadProductsOMS(mergedLevels, pricingInfo, this.recordId); 
             //console.log(JSON.stringify(this.prod))
             this.backUp = this.prod; 
             this.lineOrderNumber = isNaN((this.prod.at(-1).Line_Order__c + 1)) ? (this.prod.length + 1) : (this.prod.at(-1).Line_Order__c + 1);
@@ -615,10 +642,12 @@ handleOrderSort(item){
         this.showSpinner = false;
         try {
             if(this.accountId){
-                result = await wrapSearch({pId:this.productId , locationId: this.warehouse, accId:this.accountId , pc:this.productCode , recId: this.recordId, priceBookId: this.pbId});
+                result = await wrapSearch({pId:this.productId , locationId: this.warehouse, accId:this.accountId , 
+                                          pc:this.productCode , recId: this.recordId, priceBookId: this.pbId, priceBookIds: this.avalPriceBooks});
             }else{
                 
-                result = await wrapSearch({pId:this.productId , locationId: this.warehouse, accId:undefined , pc:this.productCode , recId: this.recordId, priceBookId: this.pbId});
+                result = await wrapSearch({pId:this.productId , locationId: this.warehouse, accId:undefined , 
+                                          pc:this.productCode , recId: this.recordId, priceBookId: this.pbId, priceBookIds: this.avalPriceBooks});
             }
             
             this.setFieldValues(result[0].selectedProduct);
@@ -626,7 +655,7 @@ handleOrderSort(item){
 //these vars may not return if its first time purchasing or quoting 
             this.lp = result[0].lastPaid;
             this.lastQuote = result[0].lastQuote;
-            
+            this.bestPrice = result[0].bestPrice; 
             if(this.lp){
                 this.prod =[
                     ...this.prod,{
@@ -634,11 +663,15 @@ handleOrderSort(item){
                         Id: '',
                         PricebookEntryId: this.pbeId,
                         Product2Id: this.productId,
+                        altPriceBookEntryId__c:this.bestPrice.Id,
+                        altPriceBookId__c: this.bestPrice.Pricebook2Id,
+                        altPriceBookName__c: this.bestPrice.Pricebook2.Name, 
                         name: this.productName,
                         Product_Name__c: this.productName,
                         ProductCode: this.productCode,
                         Quantity: 1,
-                        UnitPrice:this.agProduct ? this.floorPrice: this.levelTwo,
+                        //UnitPrice: this.agency ? this.fPrice: this.levelTwo,
+                        UnitPrice: this.bestPrice.UnitPrice,
                         lOne: this.agProduct ? this.floorPrice : this.levelOne,
                         lTwo: this.agProduct ? this.floorPrice : this.levelTwo,
                         CPQ_Margin__c: this.agProduct? 0 : this.levelTwoMargin,
@@ -653,7 +686,7 @@ handleOrderSort(item){
                         Floor_Type__c: this.floorType,
                         Agency__c: this.agProduct,
                         palletConfig: this.palletConfig, 
-                        Description: '', 
+                        Description:`Best PriceBook ${this.bestPrice.Pricebook2.Name}`,
                         wInv:  !this.invCount ? 0 :this.invCount.Quantity_Available__c,
                         readOnly: this.agProduct ? true : false,
                         editQTY: false,
@@ -681,8 +714,12 @@ handleOrderSort(item){
                         name: this.productName,
                         Product_Name__c: this.productName,
                         ProductCode: this.productCode,
+                        altPriceBookEntryId__c:this.bestPrice.Id,
+                        altPriceBookId__c: this.bestPrice.Pricebook2Id,
+                        altPriceBookName__c: this.bestPrice.Pricebook2.Name, 
                         Quantity: 1,
-                        UnitPrice: this.agProduct ? this.floorPrice : this.levelTwo,
+                        //UnitPrice: this.agency ? this.fPrice: this.levelTwo,
+                        UnitPrice: this.bestPrice.UnitPrice,
                         lOne: this.agProduct ? this.unitCost : this.levelOne,
                         lTwo: this.agProduct ? this.unitCost : this.levelTwo,
                         prevPurchase: false,
@@ -696,7 +733,7 @@ handleOrderSort(item){
                         Floor_Type__c: this.floorType,
                         Agency__c: this.agProduct,
                         palletConfig: this.palletConfig,
-                        Description: '',
+                        Description:`Best PriceBook ${this.bestPrice.Pricebook2.Name}`,
                         wInv:  !this.invCount ? 0 :this.invCount.Quantity_Available__c,
                         readOnly: this.agProduct ? true : false,
                         editQTY: false,
@@ -840,105 +877,107 @@ handleOrderSort(item){
         }
     }
 //ADDING NEW PRODUCT TO LIST
-    async getPrevSale(){
+//Old add
+    // async getPrevSale(){
     
-        let newProd = await getLastPaid({accountID: this.accountId, Code: this.productCode})
-        this.invCount = await getInventory({locId: this.warehouse, pId: this.productId })
-        this.lastQuote = await getLastQuote({accountID: this.accountId, Code: this.productCode, opportunityId: this.recordId });
+    //     let newProd = await getLastPaid({accountID: this.accountId, Code: this.productCode})
+    //     this.invCount = await getInventory({locId: this.warehouse, pId: this.productId })
+    //     this.lastQuote = await getLastQuote({accountID: this.accountId, Code: this.productCode, opportunityId: this.recordId });
 
-        if(newProd !=null){
+    //     if(newProd !=null){
             
             
-            this.prod =[
-                ...this.prod,{
-                    sObjectType: 'OpportunityLineItem',
-                    Id: '',
-                    PricebookEntryId: this.pbeId,
-                    Product2Id: this.productId,
-                    name: this.productName,
-                    Product_Name__c: this.productName,
-                    ProductCode: this.productCode,
-                    Quantity: 1,
-                    UnitPrice:this.agProduct ? this.floorPrice: this.levelTwo,
-                    lOne: this.agProduct ? this.floorPrice : this.levelOne,
-                    lTwo: this.agProduct ? this.floorPrice : this.levelTwo,
-                    CPQ_Margin__c: this.agProduct? 0 : this.levelTwoMargin,
-                    Cost__c: this.unitCost,
-                    displayCost: this.agProduct ? 'Agency' : this.unitCost,
-                    prevPurchase: true,
-                    lastPaid: newProd.Unit_Price__c,
-                    lastMarg: this.agProduct ? '' : newProd.Margin__c,
-                    lastPaidDate: newProd.Unit_Price__c ? '$'+newProd.Unit_Price__c +' '+newProd.Doc_Date__c : '',
-                    TotalPrice: this.agProduct ? this.floorPrice: this.levelTwo,
-                    Floor_Price__c: this.floorPrice,
-                    Floor_Type__c: this.floorType,
-                    Agency__c: this.agProduct,
-                    palletConfig: this.palletConfig, 
-                    Description: '', 
-                    wInv:  !this.invCount ? 0 :this.invCount.Quantity_Available__c,
-                    readOnly: this.agProduct ? true : false,
-                    editQTY: false,
-                    lastQuoteAmount: !this.lastQuote ? 0 : this.lastQuote.Last_Quote_Price__c + ' '+ this.lastQuote.Quote_Date__c,
-                    lastQuoteMargin: !this.lastQuote ? 0 : this.lastQuote.Last_Quote_Margin__c,
-                    Ship_Weight__c: this.shipWeight,
-                    sgn: this.sgn,
-                    resUse: this.rupProd,
-                    btnVar: 'destructive',
-                    btnLabel: 'Edit', 
-                    labelName:`${this.productName} - ${this.productCode}`,
-                    levels:'Lvl 1 $'+this.levelOne + ' Lvl 2 $'+ this.levelTwo,
-                    goodPrice: true,
-                    Line_Order__c: this.lineOrderNumber,
-                    OpportunityId: this.recordId
-                }
-            ]
-        }else{
+    //         this.prod =[
+    //             ...this.prod,{
+    //                 sObjectType: 'OpportunityLineItem',
+    //                 Id: '',
+    //                 PricebookEntryId: this.pbeId,
+    //                 Product2Id: this.productId,
+    //                 name: this.productName,
+    //                 Product_Name__c: this.productName,
+    //                 ProductCode: this.productCode,
+    //                 Quantity: 1,
+    //                 UnitPrice:this.agProduct ? this.floorPrice: this.levelTwo,
+    //                 lOne: this.agProduct ? this.floorPrice : this.levelOne,
+    //                 lTwo: this.agProduct ? this.floorPrice : this.levelTwo,
+    //                 CPQ_Margin__c: this.agProduct? 0 : this.levelTwoMargin,
+    //                 Cost__c: this.unitCost,
+    //                 displayCost: this.agProduct ? 'Agency' : this.unitCost,
+    //                 prevPurchase: true,
+    //                 lastPaid: newProd.Unit_Price__c,
+    //                 lastMarg: this.agProduct ? '' : newProd.Margin__c,
+    //                 lastPaidDate: newProd.Unit_Price__c ? '$'+newProd.Unit_Price__c +' '+newProd.Doc_Date__c : '',
+    //                 TotalPrice: this.agProduct ? this.floorPrice: this.levelTwo,
+    //                 Floor_Price__c: this.floorPrice,
+    //                 Floor_Type__c: this.floorType,
+    //                 Agency__c: this.agProduct,
+    //                 palletConfig: this.palletConfig, 
+    //                 Description: '', 
+    //                 wInv:  !this.invCount ? 0 :this.invCount.Quantity_Available__c,
+    //                 readOnly: this.agProduct ? true : false,
+    //                 editQTY: false,
+    //                 lastQuoteAmount: !this.lastQuote ? 0 : this.lastQuote.Last_Quote_Price__c + ' '+ this.lastQuote.Quote_Date__c,
+    //                 lastQuoteMargin: !this.lastQuote ? 0 : this.lastQuote.Last_Quote_Margin__c,
+    //                 Ship_Weight__c: this.shipWeight,
+    //                 sgn: this.sgn,
+    //                 resUse: this.rupProd,
+    //                 btnVar: 'destructive',
+    //                 btnLabel: 'Edit', 
+    //                 labelName:`${this.productName} - ${this.productCode}`,
+    //                 levels:'Lvl 1 $'+this.levelOne + ' Lvl 2 $'+ this.levelTwo,
+    //                 goodPrice: true,
+    //                 Line_Order__c: this.lineOrderNumber,
+    //                 OpportunityId: this.recordId
+    //             }
+    //         ]
+    //     }else{
             
-            this.prod = [
-                ...this.prod, {
-                    sObjectType: 'OpportunityLineItem',
-                    PricebookEntryId: this.pbeId,
-                    Id: '',
-                    Product2Id: this.productId,
-                    name: this.productName,
-                    Product_Name__c: this.productName,
-                    ProductCode: this.productCode,
-                    Quantity: 1,
-                    UnitPrice: this.agProduct ? this.floorPrice : this.levelTwo,
-                    lOne: this.agProduct ? this.unitCost : this.levelOne,
-                    lTwo: this.agProduct ? this.unitCost : this.levelTwo,
-                    prevPurchase: false,
-                    lastPaid: 0,
-                    lastMarg: this.agProduct ? 0: '', 
-                    CPQ_Margin__c: this.agProduct? 0 : this.levelTwoMargin,
-                    Cost__c: this.agProduct ? '': this.unitCost,
-                    displayCost: this.agProduct ? 'Agency' : this.unitCost,
-                    TotalPrice: this.agProduct ? this.floorPrice: this.levelTwo,
-                    Floor_Price__c: this.floorPrice,
-                    Floor_Type__c: this.floorType,
-                    Agency__c: this.agProduct,
-                    palletConfig: this.palletConfig,
-                    Description: '',
-                    wInv:  !this.invCount ? 0 :this.invCount.Quantity_Available__c,
-                    readOnly: this.agProduct ? true : false,
-                    editQTY: false,
-                    lastQuoteAmount: !this.lastQuote ? 0 : this.lastQuote.Last_Quote_Price__c + ' '+ this.lastQuote.Quote_Date__c,
-                    lastQuoteMargin: !this.lastQuote ? 0 : this.lastQuote.Last_Quote_Margin__c,
-                    Ship_Weight__c: this.shipWeight,
-                    sgn: this.sgn,
-                    resUse: this.rupProd,
-                    btnVar: 'destructive',
-                    btnLabel: 'Edit', 
-                    labelName:`${this.productName} - ${this.productCode}`,
-                    levels:'Lvl 1 $'+this.levelOne + ' Lvl 2 $'+ this.levelTwo,
-                    goodPrice: true,
-                    Line_Order__c: this.lineOrderNumber,
-                    OpportunityId: this.recordId
-                }
-            ]
-        } //console.log('new product '+JSON.stringify(this.prod))
-        this.lineOrderNumber ++
-    }
+    //         this.prod = [
+    //             ...this.prod, {
+    //                 sObjectType: 'OpportunityLineItem',
+    //                 PricebookEntryId: this.pbeId,
+    //                 Id: '',
+    //                 Product2Id: this.productId,
+    //                 name: this.productName,
+    //                 Product_Name__c: this.productName,
+    //                 ProductCode: this.productCode,
+    //                 Quantity: 1,
+    //                 UnitPrice: this.agProduct ? this.floorPrice : this.levelTwo,
+    //                 lOne: this.agProduct ? this.unitCost : this.levelOne,
+    //                 lTwo: this.agProduct ? this.unitCost : this.levelTwo,
+    //                 prevPurchase: false,
+    //                 lastPaid: 0,
+    //                 lastMarg: this.agProduct ? 0: '', 
+    //                 CPQ_Margin__c: this.agProduct? 0 : this.levelTwoMargin,
+    //                 Cost__c: this.agProduct ? '': this.unitCost,
+    //                 displayCost: this.agProduct ? 'Agency' : this.unitCost,
+    //                 TotalPrice: this.agProduct ? this.floorPrice: this.levelTwo,
+    //                 Floor_Price__c: this.floorPrice,
+    //                 Floor_Type__c: this.floorType,
+    //                 Agency__c: this.agProduct,
+    //                 palletConfig: this.palletConfig,
+    //                 Description: '',
+    //                 wInv:  !this.invCount ? 0 :this.invCount.Quantity_Available__c,
+    //                 readOnly: this.agProduct ? true : false,
+    //                 editQTY: false,
+    //                 lastQuoteAmount: !this.lastQuote ? 0 : this.lastQuote.Last_Quote_Price__c + ' '+ this.lastQuote.Quote_Date__c,
+    //                 lastQuoteMargin: !this.lastQuote ? 0 : this.lastQuote.Last_Quote_Margin__c,
+    //                 Ship_Weight__c: this.shipWeight,
+    //                 sgn: this.sgn,
+    //                 resUse: this.rupProd,
+    //                 btnVar: 'destructive',
+    //                 btnLabel: 'Edit', 
+    //                 labelName:`${this.productName} - ${this.productCode}`,
+    //                 levels:'Lvl 1 $'+this.levelOne + ' Lvl 2 $'+ this.levelTwo,
+    //                 goodPrice: true,
+    //                 Line_Order__c: this.lineOrderNumber,
+    //                 OpportunityId: this.recordId
+    //             }
+    //         ]
+    //     } 
+    //     //console.log('new product '+JSON.stringify(this.prod))
+    //     this.lineOrderNumber ++
+    // }
 //handle show the save button options
 allowSave(){
     if(!this.wasEdited){
@@ -949,7 +988,7 @@ allowSave(){
      //PRICE WARNING SECTION 
         //handles showing the user prompts
         handleWarning = (targ, lev, floor, price,ind)=>{
-            console.log(1, targ, 2, lev, 3, floor, 4, price);
+            //console.log(1, targ, 2, lev, 3, floor, 4, price);
              
              if(price > lev){
                  this.template.querySelector(`[data-id="${targ}"]`).style.color ="black";

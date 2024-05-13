@@ -1,5 +1,6 @@
 import { LightningElement, api, track, wire } from 'lwc';
 import searchTag from '@salesforce/apex/cpqTagsSearch.cpqSearchTag';
+//import searchTag from '@salesforce/apex/whiteBoard.cpqSearchTag';
 //import searchPromos from '@salesforce/apex/cpqTagsSearch.searchPromos';
 //import selectedProducts from '@salesforce/apex/quickPriceSearch.selectedProducts';
 import { MessageContext, publish} from 'lightning/messageService';
@@ -32,6 +33,7 @@ export default class ProdSearchTags extends LightningElement {
     pf = 'All';
     cat = 'All';
     productsSelected = 0;
+    helpInput = `Introducing the New ATS Advanced Search! You can continue searching by product name and code, but now you also have the option to search using A.I. or Frac. Give it a try with keywords like dicamba or Frac 11.`
     //number of items returned by search string. Designed to give metrics to ATS
     searchSize; 
     @track selection = [];
@@ -162,16 +164,18 @@ export default class ProdSearchTags extends LightningElement {
                 //the normal tag search
                 let searchRacks;
                 let backUpQuery;
+                let warehouseCode;
                 if(this.stock){
                     this.stock = spellCheck(this.stock[0])
                 }
                     let buildSearchInfo = cpqSearchString(this.searchTerm, this.stock, this.whSearch)
                     this.searchQuery = buildSearchInfo.builtTerm;  
                     searchRacks = buildSearchInfo.wareHouseSearch; 
-                    backUpQuery = buildSearchInfo.backUpQuery
+                    backUpQuery = buildSearchInfo.backUpQuery;
+                    warehouseCode = buildSearchInfo.warehouseCode;
                 console.log(1, this.searchQuery);
-                console.log(2, backUpQuery)
-                let data = await searchTag({searchKey: this.searchQuery, searchWareHouse:searchRacks, backUpSearch: backUpQuery}) 
+                
+                let data = await searchTag({searchKey: this.searchQuery, searchWareHouse:searchRacks, backUpSearch: backUpQuery, warehouseKey: warehouseCode}) //add for ai by location
                 //here we split up the returned wrapper. 
                 //access the tags object using data.tags and the warehouse search using data.wareHouseFound
                 let tags = data.tags != undefined ? data.tags : []

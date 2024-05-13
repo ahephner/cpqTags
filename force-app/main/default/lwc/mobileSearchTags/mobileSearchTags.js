@@ -134,6 +134,7 @@ export default class MobileSearchTags extends LightningElement{
                 //the normal tag search
                 let searchRacks;
                 let backUpQuery;
+                let warehouseCode;
                 if(this.stock){
                     this.stock = spellCheck(this.stock[0])
                 }
@@ -141,9 +142,10 @@ export default class MobileSearchTags extends LightningElement{
                 let buildSearchInfo = cpqSearchString(this.searchTerm, this.stock, this.whSearch)
                 this.searchQuery = buildSearchInfo.builtTerm;  
                 searchRacks = buildSearchInfo.wareHouseSearch; 
-                backUpQuery = buildSearchInfo.backUpQuery
+                backUpQuery = buildSearchInfo.backUpQuery;
+                warehouseCode = buildSearchInfo.warehouseCode;
             try {
-                let data = await searchTag({searchKey: this.searchQuery, searchWareHouse:searchRacks, backUpSearch: backUpQuery}) 
+                let data = await searchTag({searchKey: this.searchQuery, searchWareHouse:searchRacks, backUpSearch: backUpQuery, warehouseKey: warehouseCode}) 
                 //here we split up the returned wrapper. 
                 //access the tags object using data.tags and the warehouse search using data.wareHouseFound
                 let tags = data.tags != undefined ? data.tags : []

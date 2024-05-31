@@ -112,7 +112,7 @@
                         <div class="slds-col slds-size_2-of-12  slds-m-top_large" >
                             <lightning-icon icon-name="utility:close" name={sp.ProductCode} size='x-small' class='hover '
                             alternative-text='remove' title="Remove" onclick={removeProd} ></lightning-icon>
-                            <div class='pName  hasInfo'>{sp.name}  
+                            <div class='pName  hasInfo'><a href={sp.prodURL} target="_blank">{sp.name}</a>  
                                 <!-- <lightning-helptext content={sp.tips}></lightning-helptext> -->
                                  
                                     
@@ -320,6 +320,7 @@
                         <div class='slds-float_right slds-m-right_medium'>
                             <lightning-button-group>
                                 <lightning-button variant="brand" label="Save" title="save" onclick={saveProducts}></lightning-button>
+                                <lightning-button variant="Neutral" label="Add Product" title="priceBook" onclick={openProdSearch}></lightning-button> 
                                 <!-- <lightning-button variant="brand" label="Get Quote" title="Get Quote" onclick={moveStage}></lightning-button> -->
                                 <!-- <lightning-button variant="success" label="Save Submit" title="save" onclick={saveSubmit}></lightning-button> -->
                             </lightning-button-group>
@@ -338,6 +339,7 @@
                         <div class='slds-float_right slds-m-right_medium'>
                             <lightning-button-group>
                                 <lightning-button variant="brand" label="Save" title="save" onclick={saveProducts}></lightning-button>
+                                <lightning-button variant="Neutral" label="Add Product" title="priceBook" onclick={openProdSearch}></lightning-button> 
                                 <!-- <lightning-button variant="brand" label="Get Quote" title="Get Quote" onclick={moveStage}></lightning-button> -->
                                 <!-- <lightning-button variant="success" label="Save Submit" title="save" onclick={saveSubmit}></lightning-button> -->
                             </lightning-button-group>

@@ -136,7 +136,7 @@ export default class ProdSelected extends LightningElement {
 
     //get pricebooks
     @wire(getPriceBooks,{accountId: '$accountId'})
-    wiredWarehouse({error, data}){
+    wiredPriceBooks({error, data}){
         if(data){
             
             //no double values and assign the standard price book up front; 
@@ -377,6 +377,8 @@ priceCheck(){
                     Line_Order__c: this.lineOrderNumber,
                     lastThirty: result[0].lastThirty ? result[0].lastThirty : '0',
                     url:`https://advancedturf.lightning.force.com/lightning/r/${this.productId}/related/ProductItems/view`,
+                    //prodURL: `https://advancedturf--full.sandbox.lightning.force.com/lightning/r/Product2/${this.productId}/view`,
+                    prodURL: `https://advancedturf.lightning.force.com/lightning/r/Product2/${this.productId}/view`,
                     OpportunityId: this.recordId
                 }
             ]
@@ -427,6 +429,8 @@ priceCheck(){
                     Line_Order__c: this.lineOrderNumber,
                     lastThirty: result[0].lastThirty ? result[0].lastThirty : '0',
                     url:`https://advancedturf.lightning.force.com/lightning/r/${this.productId}/related/ProductItems/view`,
+                    //prodURL: `https://advancedturf--full.sandbox.lightning.force.com/lightning/r/Product2/${this.productId}/view`,
+                    prodURL: `https://advancedturf.lightning.force.com/lightning/r/Product2/${this.productId}/view`,
                     OpportunityId: this.recordId
                 }
             ]
@@ -577,6 +581,7 @@ priceCheck(){
             resUse: false,
             manLine: false,
             url:`https://advancedturf.lightning.force.com/lightning/r/01t2M0000062XwhQAE/related/ProductItems/view`,
+            prodURL: `https://advancedturf.lightning.force.com/lightning/r/Product2/01t2M0000062XwhQAE/view`,
             OpportunityId: this.recordId
         }
         const atsShipNT = {
@@ -614,6 +619,7 @@ priceCheck(){
             resUse: false,
             manLine: false,
             url:`https://advancedturf.lightning.force.com/lightning/r/01t2M0000062XwhQAE/related/ProductItems/view`,
+            prodURL: `https://advancedturf.lightning.force.com/lightning/r/Product2/01t6T000006OzAyQAK/view`,
             OpportunityId: this.recordId
         }
         const checkShip = this.selection.findIndex(x => x.Product2Id === '01t2M0000062XwhQAE')
@@ -1321,7 +1327,7 @@ priceCheck(){
     //Important don't query UnitPrice on Opp Line Item. Otherwise it will think the cost is the same price. 
     initPriceCheck(){
         this.hasRendered = false; 
-        console.log('init');
+        console.log('init running price check');
         
             for(let i=0; i<this.selection.length; i++){
                 //console.log(this.selection[i])

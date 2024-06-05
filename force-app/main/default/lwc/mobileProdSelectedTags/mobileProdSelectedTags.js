@@ -270,12 +270,12 @@ export default class MobileProdSelected extends LightningElement {
              this.prod[index].btnLabel = 'Close'; 
         }else if(this.prod[index].Agency__c && this.prod[index].editQTY === false){
              this.prod[index].editQTY = true;
-             this.prod[index].btnVar = 'destructive';
+             this.prod[index].btnVar = 'brand';
              this.prod[index].btnLabel = 'Edit'; 
         }else if(this.prod[index].readOnly === false && this.prod[index].showInfo === false){
              this.prod[index].readOnly = true;
              this.prod[index].editQTY = true;
-             this.prod[index].btnVar = 'destructive';
+             this.prod[index].btnVar = 'brand';
              this.prod[index].btnLabel = 'Edit';
         }else if(this.prod[index].readOnly === false && this.prod[index].showInfo === true){
              this.prod[index].showInfo = false; 
@@ -303,12 +303,12 @@ export default class MobileProdSelected extends LightningElement {
                  this.prod[index].btnLabel = 'Close'; 
              }else if(this.prod[index].Agency__c && this.prod[index].editQTY === false){
                  this.prod[index].editQTY = true; 
-                 this.prod[index].btnVar = 'destructive';
+                 this.prod[index].btnVar = 'success';
                  this.prod[index].btnLabel = 'Edit';
              }else if(this.prod[index].readOnly === false && this.prod[index].showInfo === false){
                  this.prod[index].readOnly = true;
                  this.prod[index].editQTY = true;
-                 this.prod[index].btnVar = 'destructive';
+                 this.prod[index].btnVar = 'success';
                  this.prod[index].btnLabel = 'Edit';
              }else if(this.prod[index].readOnly === false && this.prod[index].showInfo === true){
                  this.prod[index].showInfo = false; 
@@ -695,7 +695,7 @@ handleOrderSort(item){
                         Ship_Weight__c: this.shipWeight,
                         sgn: this.sgn,
                         resUse: this.rupProd,
-                        btnVar: 'destructive',
+                        btnVar: 'success',
                         btnLabel: 'Edit', 
                         labelName:`${this.productName} - ${this.productCode}`,
                         levels:'Lvl 1 $'+this.levelOne + ' Lvl 2 $'+ this.levelTwo,
@@ -742,7 +742,7 @@ handleOrderSort(item){
                         Ship_Weight__c: this.shipWeight,
                         sgn: this.sgn,
                         resUse: this.rupProd,
-                        btnVar: 'destructive',
+                        btnVar: 'success',
                         btnLabel: 'Edit', 
                         labelName:`${this.productName} - ${this.productCode}`,
                         levels:'Lvl 1 $'+this.levelOne + ' Lvl 2 $'+ this.levelTwo,

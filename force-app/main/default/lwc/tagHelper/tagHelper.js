@@ -29,7 +29,7 @@ const quickSearchString = (term, stock)=>{
   
     //previous before order by status then score
     //stock != null ? searchString += ' and Stock_Status__c  = \''+stock+'\' order by Stock_Status__c desc nulls last)' : searchString += ' order by Stock_Status__c desc nulls last)'; 
-    stock != null ? searchString += ' and Stock_Status__c  = \''+stock+'\' and Stock_Status__c != null and Stock_Status__c != \''+nonStock+'\')' : searchString +=' and Stock_Status__c != null and Stock_Status__c != \''+nonStock+'\')';
+    stock != null ? searchString += ' and Stock_Status__c  = \''+stock+'\' and Stock_Status__c != \''+nonStock+'\')' : searchString +=' and Stock_Status__c != \''+nonStock+'\')';
     let backUpString = wareHouseSearch ? searchString.replace(` ${wh}`, '') : '';
   
   return {'builtTerm':searchString, 

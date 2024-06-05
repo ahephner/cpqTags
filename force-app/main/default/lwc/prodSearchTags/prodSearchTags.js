@@ -182,8 +182,21 @@ export default class ProdSearchTags extends LightningElement {
                 let backUpSearchUsed = data.backUpSearchUsed; 
                 
                 let once = tags.length> 1 ? await uniqVals(tags) : tags;
+                let noStatus = []
+                let hasStatus = []
+                
+                for(let i = 0; i<once.length; i++){
+                   
+                    if(once[i].Stock_Status__c === undefined){
+                        noStatus.push(once[i])
+                    }else{
+                        hasStatus.push(once[i])
+                    }
+                }
+                //console.log(noStatus)
                 this.searchSize = once.length; 
-                once.sort((a,b)=>b.Stock_Status__c.localeCompare(a.Stock_Status__c) || b.ATS_Score__c - a.ATS_Score__c || !Number.isFinite(a.ATS_Score__c) - !Number.isFinite(b.ATS_Score__c))
+                hasStatus.sort((a,b)=>b.Stock_Status__c.localeCompare(a.Stock_Status__c) || b.ATS_Score__c - a.ATS_Score__c || !Number.isFinite(a.ATS_Score__c) - !Number.isFinite(b.ATS_Score__c))
+                once = [...hasStatus, ...noStatus]
                 console.table(once)
                 this.prod = await once.map((item, index) =>({
                                     ...item, 

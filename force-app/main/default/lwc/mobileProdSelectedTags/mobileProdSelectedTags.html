@@ -65,19 +65,30 @@
  <lightning-accordion-section name="Pricing" label={item.labelName}>
 <div class='slds-grid slds-wrap'>    
         <div class='slds-col slds-size_1-of-2 slds-m-left_x-small slds-m-top_medium'>
-            <template if:true={item.difPrice}>
+            <!-- <template if:true={item.difPrice}>
                 <p class="gunsUP">The unit price previously quoted is indicated under UnitPrice. A new unit price is now in effect, which is ${item.curUnitPrice}</p>
-            </template>
+            </template> -->
         </div>
             <!-- button group -->
             <div class='slds-col slds-size_1-of-3 slds-m-left_x-small'>
-                <lightning-button 
-                  variant={item.btnVar}
-                  label={item.btnLabel} 
-                  value="Edit"
+                <lightning-button-group>
+                    <lightning-button 
+                    variant={item.btnVar}
+                    label={item.btnLabel} 
+                    value="Edit"
+                    name={item.Product2Id}
+                    onclick={handleAction} 
+                  ></lightning-button>
+                  <lightning-button 
+                  variant='destructive'
+                  label='Delete' 
+                  value="Delete"
+                  class="slds-m-left_small"
                   name={item.Product2Id}
                   onclick={handleAction} 
                 ></lightning-button>
+                </lightning-button-group>
+                
                 <!-- <div class="slds-p-around_medium lgc-bg ">
                     <lightning-button-menu alternative-text="Show menu" variant="border-filled" name={item.Product2Id} 
                                            icon-size="small"  onselect={handleAction} icon-name="utility:threedots">

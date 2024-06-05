@@ -118,7 +118,7 @@
           resUse: x.Product2.RUP__c,
           difPrice:  prices.find(a=> a.Product2Id === x.Product2Id).UnitPrice != x.CPQ_Unit_Price__c ? true : false, 
           curUnitPrice: prices.find(a=> a.Product2Id === x.Product2Id).UnitPrice,
-          btnVar: 'destructive',
+          btnVar: 'success',
           btnLabel: 'Edit', 
           Line_Order__c: isNaN(Number(x.Line_Order__c))? count : Number(x.CPQ_Unit_Price__c),
           OpportunityId: x.OpportunityId

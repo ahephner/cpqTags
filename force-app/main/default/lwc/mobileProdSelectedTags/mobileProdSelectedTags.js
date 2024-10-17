@@ -1,7 +1,7 @@
 import { LightningElement,api, track, wire } from 'lwc';
 import {getRecord, updateRecord, deleteRecord, getFieldValue } from 'lightning/uiRecordApi';
-//import createProducts from '@salesforce/apex/cpqApex.createProducts';
-import createProducts from '@salesforce/apex/omsCPQAPEX.createProducts';
+import createProducts from '@salesforce/apex/cpqApex.createProducts';
+//import createProducts from '@salesforce/apex/omsCPQAPEX.createProducts';
 import wrapSearch from '@salesforce/apex/omsCPQAPEX.getDetailsPricing';
 //get price books the account has access too. 
 import getPriceBooks from '@salesforce/apex/getPriceBooks.getPriceBookIds';
@@ -270,12 +270,12 @@ export default class MobileProdSelected extends LightningElement {
              this.prod[index].btnLabel = 'Close'; 
         }else if(this.prod[index].Agency__c && this.prod[index].editQTY === false){
              this.prod[index].editQTY = true;
-             this.prod[index].btnVar = 'brand';
+             this.prod[index].btnVar = 'destructive';
              this.prod[index].btnLabel = 'Edit'; 
         }else if(this.prod[index].readOnly === false && this.prod[index].showInfo === false){
              this.prod[index].readOnly = true;
              this.prod[index].editQTY = true;
-             this.prod[index].btnVar = 'brand';
+             this.prod[index].btnVar = 'destructive';
              this.prod[index].btnLabel = 'Edit';
         }else if(this.prod[index].readOnly === false && this.prod[index].showInfo === true){
              this.prod[index].showInfo = false; 
@@ -303,12 +303,12 @@ export default class MobileProdSelected extends LightningElement {
                  this.prod[index].btnLabel = 'Close'; 
              }else if(this.prod[index].Agency__c && this.prod[index].editQTY === false){
                  this.prod[index].editQTY = true; 
-                 this.prod[index].btnVar = 'success';
+                 this.prod[index].btnVar = 'destructive';
                  this.prod[index].btnLabel = 'Edit';
              }else if(this.prod[index].readOnly === false && this.prod[index].showInfo === false){
                  this.prod[index].readOnly = true;
                  this.prod[index].editQTY = true;
-                 this.prod[index].btnVar = 'success';
+                 this.prod[index].btnVar = 'destructive';
                  this.prod[index].btnLabel = 'Edit';
              }else if(this.prod[index].readOnly === false && this.prod[index].showInfo === true){
                  this.prod[index].showInfo = false; 
@@ -670,8 +670,9 @@ handleOrderSort(item){
                         Product_Name__c: this.productName,
                         ProductCode: this.productCode,
                         Quantity: 1,
-                        //UnitPrice: this.agency ? this.fPrice: this.levelTwo,
-                        UnitPrice: this.bestPrice.UnitPrice,
+                        UnitPrice: this.agProduct ? this.floorPrice: 
+                                this.levelTwo !=undefined? this.levelTwo: this.levelOne,
+                        //UnitPrice: this.bestPrice.UnitPrice,
                         lOne: this.agProduct ? this.floorPrice : this.levelOne,
                         lTwo: this.agProduct ? this.floorPrice : this.levelTwo,
                         CPQ_Margin__c: this.agProduct? 0 : this.levelTwoMargin,
@@ -695,7 +696,7 @@ handleOrderSort(item){
                         Ship_Weight__c: this.shipWeight,
                         sgn: this.sgn,
                         resUse: this.rupProd,
-                        btnVar: 'success',
+                        btnVar: 'destructive',
                         btnLabel: 'Edit', 
                         labelName:`${this.productName} - ${this.productCode}`,
                         levels:'Lvl 1 $'+this.levelOne + ' Lvl 2 $'+ this.levelTwo,
@@ -718,8 +719,9 @@ handleOrderSort(item){
                         altPriceBookId__c: this.bestPrice.Pricebook2Id,
                         altPriceBookName__c: this.bestPrice.Pricebook2.Name, 
                         Quantity: 1,
-                        //UnitPrice: this.agency ? this.fPrice: this.levelTwo,
-                        UnitPrice: this.bestPrice.UnitPrice,
+                        UnitPrice: this.agProduct ? this.floorPrice: 
+                                this.levelTwo !=undefined? this.levelTwo: this.levelOne,
+                        //UnitPrice: this.bestPrice.UnitPrice,
                         lOne: this.agProduct ? this.unitCost : this.levelOne,
                         lTwo: this.agProduct ? this.unitCost : this.levelTwo,
                         prevPurchase: false,
@@ -742,7 +744,7 @@ handleOrderSort(item){
                         Ship_Weight__c: this.shipWeight,
                         sgn: this.sgn,
                         resUse: this.rupProd,
-                        btnVar: 'success',
+                        btnVar: 'destructive',
                         btnLabel: 'Edit', 
                         labelName:`${this.productName} - ${this.productCode}`,
                         levels:'Lvl 1 $'+this.levelOne + ' Lvl 2 $'+ this.levelTwo,

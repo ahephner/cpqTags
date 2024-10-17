@@ -24,12 +24,36 @@ const quickSearchString = (term, stock)=>{
     let wareHouseSearch = wh != null ? true :false; 
     let searchString = 'FIND \''+input+'\' IN ALL FIELDS RETURNING Tag__c(id, Tag_Description__c, Search_Slug_2__c, '
     +'Product__c, Product_Name__c, Product__r.Temp_Unavailable__c,Product__r.Temp_Mess__c, ATS_Score__c, Stock_Status__c, '
-    +'W_Focus_Product__c, W_Product_Profitability__c, W_Program_Score__c, W_Inventory_Score__c, '
+    +'W_Focus_Product__c, W_Product_Profitability__c, W_Program_Score__c, W_Inventory_Score__c, Product__r.ERP_Name__c,'
     +'Floor_Price__c, Product__r.Total_Product_Items__c,Product__r.Floor_Type__c, Product_Code__c where product__r.IsActive = true ' //and Tag_Status__c = \''+ status+'\''
   
     //previous before order by status then score
-    //stock != null ? searchString += ' and Stock_Status__c  = \''+stock+'\' order by Stock_Status__c desc nulls last)' : searchString += ' order by Stock_Status__c desc nulls last)'; 
-    stock != null ? searchString += ' and Stock_Status__c  = \''+stock+'\' and Stock_Status__c != \''+nonStock+'\')' : searchString +=' and Stock_Status__c != \''+nonStock+'\')';
+    stock != null ? searchString += ' and Stock_Status__c  = \''+stock+'\' order by Stock_Status__c desc nulls last)' : searchString += ' order by Stock_Status__c desc nulls last)'; 
+    //stock != null ? searchString += ' and Stock_Status__c  = \''+stock+'\' and Stock_Status__c != \''+nonStock+'\')' : searchString +=' and Stock_Status__c != \''+nonStock+'\')';
+    let backUpString = wareHouseSearch ? searchString.replace(` ${wh}`, '') : '';
+  
+  return {'builtTerm':searchString, 
+          'wareHouseSearch':wareHouseSearch,
+          'backUpQuery': backUpString,
+          'warehouseCode': warehouseSearchCode
+         }; 
+  }
+/////for program builder 
+  const programBuilderSearchString = (term, stock, wh) =>{
+    let status = 'Active'
+    let nonStock = 'Non-Stock'; 
+    let warehouseSearchCode = wh != null ? wh[0] : '';
+    let input = wh != null ? `${term} ${wh}`: term; 
+    let wareHouseSearch = wh != null ? true :false; 
+    let searchString = 'FIND \''+input+'\' IN ALL FIELDS RETURNING Tag__c(id, Tag_Description__c, Search_Slug_2__c, '
+    +'Product__c, Product_Name__c, Product__r.Temp_Unavailable__c,Product__r.Temp_Mess__c, ATS_Score__c, Stock_Status__c, Product__r.Size__c, '
+    +'W_Focus_Product__c, W_Product_Profitability__c, W_Program_Score__c, W_Inventory_Score__c, Product__r.Product_Type__c, Product__r.Agency_Pricing__c,'
+    +'Product__r.K__c, Product__r.N__c, Product__r.P__c, Product__r.hasFertilizer__c, Product__r.X1_Gallon_Weight__c, Product__r.ERP_Name__c, '
+    +'Floor_Price__c, Product__r.Total_Product_Items__c,Product__r.Floor_Type__c, Product_Code__c where product__r.IsActive = true and Product__r.Include_in_Programs__c = true' //and Tag_Status__c = \''+ status+'\''
+  
+    //previous before order by status then score
+    stock != null ? searchString += ' and Stock_Status__c  = \''+stock+'\' order by Stock_Status__c desc nulls last)' : searchString += ' order by Stock_Status__c desc nulls last)'; 
+    //stock != null ? searchString += ' and Stock_Status__c  = \''+stock+'\' and Stock_Status__c != \''+nonStock+'\')' : searchString +=' and Stock_Status__c != \''+nonStock+'\')';
     let backUpString = wareHouseSearch ? searchString.replace(` ${wh}`, '') : '';
   
   return {'builtTerm':searchString, 
@@ -44,7 +68,7 @@ const quickSearchString = (term, stock)=>{
     let searchString = 'FIND \''+term+'\' IN ALL FIELDS RETURNING Tag__c(id, Tag_Description__c, Search_Slug_2__c, '
     +'Product__c, Product_Name__c, Product__r.Temp_Unavailable__c,Product__r.Temp_Mess__c, ATS_Score__c, Stock_Status__c, '
     +'W_Focus_Product__c, W_Product_Profitability__c, W_Program_Score__c, W_Inventory_Score__c, Product__r.Agency_Pricing__c, '
-    +'Product__r.Ship_Weight__c, Product__r.Pallet_Qty__c, Product__r.SGN__c, Product__r.RUP__c, '
+    +'Product__r.Ship_Weight__c, Product__r.Pallet_Qty__c, Product__r.SGN__c, Product__r.RUP__c,Product__r.ERP_Name__c, '
     +'Floor_Price__c, Product__r.Total_Product_Items__c,Product__r.Floor_Type__c, Product_Code__c where product__r.IsActive = true' //and Tag_Status__c = \''+ status+'\''
   //once score is stable order by ATS_Score__c desc nulls last
   stock != null ? searchString += ' and Stock_Status__c  = \''+stock+'\' order by Stock_Status__c desc nulls last)' :searchString += ' order by Stock_Status__c desc nulls last)'; 
@@ -141,6 +165,7 @@ export{
        spellCheck,
        quickSearchString,
        cpqSearchString,
+       programBuilderSearchString, 
        uniqVals, 
        cpqSearchStringMobile,
        uniqPromo,

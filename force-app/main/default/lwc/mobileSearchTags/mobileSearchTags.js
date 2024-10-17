@@ -169,7 +169,7 @@ export default class MobileSearchTags extends LightningElement{
                 once = [...hasStatus, ...noStatus]
                 this.prod = await once.map((item, index)=>({
                     ...item, 
-                    Name: item.Product__r.Temp_Unavailable__c ? item.Product_Name__c + ' - ' +item.Product__r.Temp_Mess__c : item.Product_Name__c,
+                    Name: item.Product__r.Temp_Unavailable__c ? item.Product_Name__c + ' - ' +item.Product__r.Temp_Mess__c : item.Product__r.ERP_Name__c,
                     ProductCode: item.Product_Code__c + ' - '+item.ATS_Score__c,
                     Floor_Price__c: item?.Floor_Price__c ?? 0, 
                     agency: item.Product__r.Agency_Product__c,

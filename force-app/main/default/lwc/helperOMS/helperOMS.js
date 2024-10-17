@@ -8,23 +8,25 @@
     console.log('helper pricing ==> ', prices)
     let prod = products.map(x =>{
       count++   
-        //console.log(JSON.stringify(products));
+     
+        console.log(JSON.stringify(products));
         return   {
             sObjectType: 'OpportunityLineItem',
             Id: x.Id,
             PricebookEntryId: x.PricebookEntryId,
             Product2Id: x.Product2Id,
-            name: x.Product2.Name,
+            name: x.Product2.Name + (x.Product2.Agency_Pricing__c ? ' Agency' : '') + (x.Product2.RUP__c  ? ' RUP' : ''),
             ProductCode: x.Product2.ProductCode,
             Quantity: x.Quantity,
             lOne: x.Level_1_UserView__c,
-            floorPrice: prices.find(a=> a.Product2Id === x.Product2Id).Floor_Price__c,
+            floorPrice: x.Floor_Price__c,
             //UnitPrice:x.Product2.Agency_Pricing__c ? x.Floor_Price__c: x.CPQ_Unit_Price__c,
-            UnitPrice: prices.find(a=> a.Product2Id === x.Product2Id).UnitPrice,
+            UnitPrice: x.Product2.Agency_Pricing__c ? x.Floor_Price__c : x.CPQ_Unit_Price__c,
             //MinPrice: x.UnitPrice, 
             CPQ_Margin__c: x.Product2.Agency_Pricing__c? '' : x.CPQ_Margin__c,
             Cost__c: x.Product_Cost__c,
-            displayCost: x.Product2.Agency_Pricing__c ? 'Agency' : x.Product_Cost__c, 
+            displayCost: x.Product2.Agency_Pricing__c ? 'Agency' : x.Product_Cost__c,
+            altPriceBookName__c: x?.altPriceBookName__c ?? 'Standard', 
             agency: x.Product2.Agency_Pricing__c ,
             wInv: x.Quantity_Available__c ? x.Quantity_Available__c : 0,
             lastPaid: x.Unit_Price__c ? '$'+x.Unit_Price__c : 0,
@@ -41,14 +43,16 @@
             lastQuoteMargin: x.Last_Quote_Margin__c,
             lastQuoteDate: x.Quote_Date__c,
             readOnly: true,
-            flrText: 'flr price $'+ prices.find(a=> a.Product2Id === x.Product2Id).Floor_Price__c,
+            flrText: 'flr price $'+ x.Floor_Price__c,
             lOneText: 'lev 1 $'+x.Level_1_UserView__c,
+            tips: `The unit price previously quoted is indicated under Price. A new unit price is now in effect, which is $`+ prices.find(a=> a.Product2Id === x.Product2Id).UnitPrice,
             sgn: x.Product2.SGN__c,
             goodPrice:x.Product2.Agency_Pricing__c ?true: (x.Floor_Price__c <= x.CPQ_Unit_Price__c ? true: false),
             resUse: x.Product2.RUP__c,
             manLine: x.Product2.ProductCode.includes('MANUAL CHARGE')  ? true : false,
             Line_Order__c: isNaN(Number(x.Line_Order__c))? count : Number(x.Line_Order__c) ,
             difPrice:  prices.find(a=> a.Product2Id === x.Product2Id).UnitPrice != x.CPQ_Unit_Price__c ? true : false, 
+            curUnitPrice: prices.find(a=> a.Product2Id === x.Product2Id).UnitPrice,
             url: `https://advancedturf.lightning.force.com/lightning/r/${x.Product2Id}/related/ProductItems/view`, 
             //prodURL: `https://advancedturf--full.sandbox.lightning.force.com/lightning/r/Product2/${x.Product2Id}/view`,
             prodURL: `https://advancedturf.lightning.force.com/lightning/r/Product2/${x.Product2Id}/view`,
@@ -70,7 +74,7 @@
   const mobileLoadProductsOMS = (products, upPrices, recordId) =>{
     let count = 0;
     let prices = upPrices
-    console.log('helper pricing ==> ', prices)
+    //console.log('helper pricing ==> ', prices)
     let prod = products.map(x =>{
       count++   
         //console.log(JSON.stringify(products));
@@ -84,15 +88,16 @@
           Agency__c: x.Product2.Agency_Pricing__c, 
           PricebookEntryId: x.PricebookEntryId,
           Product2Id: x.Product2Id,
-          name: x.Product2.Name,
+          name: x.Product2.Name + (x.Product2.Agency_Pricing__c ? ' Agency' : '') + (x.Product2.RUP__c  ? ' RUP' : ''),
           ProductCode: x.Product2.ProductCode,
           Quantity: x.Quantity,
-          labelName: `${x.Product2.Name} - ${x.Product2.ProductCode}`,
+          labelName: `${x.Product2.Name} - ${x.Product2.ProductCode}`+ (x.Product2.Agency_Pricing__c ? ' Agency' : '') + (x.Product2.RUP__c  ? ' RUP' : ''),
           lOne: x.Level_1_UserView__c,
-          Floor_Price__c: prices.find(a=> a.Product2Id === x.Product2Id).Floor_Price__c,
+          Floor_Price__c: x.Floor_Price__c,
           Floor_Type__c: x.Product2.Floor_Type__c,
-          UnitPrice: x.Product2.Agency_Pricing__c ? prices.find(a=> a.Product2Id === x.Product2Id).Floor_Price__c : x.CPQ_Unit_Price__c,
-          MinPrice: x.UnitPrice, 
+          UnitPrice: x.Product2.Agency_Pricing__c ? x.Floor_Price__c : x.CPQ_Unit_Price__c,
+          MinPrice: x.UnitPrice,
+          altPriceBookName__c: x?.altPriceBookName__c ?? 'Standard',  
           CPQ_Margin__c: x.Product2.Agency_Pricing__c? '' : x.CPQ_Margin__c,
           Cost__c: x.Product2.Agency_Pricing__c ? '' : x.Product_Cost__c,
           displayCost: x.Product2.Agency_Pricing__c ? 'Agency' : x.Product_Cost__c,
@@ -148,10 +153,30 @@
     return el; 
   }
 
+  const priorityPricing = (element)=>{
+    let priceBooksObjArray;
+    let priceBookIdArray =new Set();; 
+    let standardPriceBook = {Pricebook2Id: '01s410000077vSKAAY',Priority:6, PriceBook2:{Name:'Standard'} }
+
+    priceBooksObjArray = [...element, standardPriceBook].filter((x)=>x.Priority!=undefined).sort((a,b)=>{
+      return a.Priority - b.Priority; 
+  })
+
+  for(let i = 0; i<priceBooksObjArray.length; i++){
+          priceBookIdArray.add(priceBooksObjArray[i].Pricebook2Id)
+      //console.log(`Priority ${order[i].Priority} - ${order[i].PriceBook2.Name}`)
+
+  }
+    return {
+      priceBooksObjArray,
+      priceBookIdArray
+    }
+  }
 
 // make it so functions can be used other pages
 export{ 
         onLoadProductsOMS, 
         sortArray,
-        mobileLoadProductsOMS
+        mobileLoadProductsOMS,
+        priorityPricing
       }

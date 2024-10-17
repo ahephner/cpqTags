@@ -17,7 +17,7 @@ const REGEX_COMMA = /(,)/g;
 const REGEX_24D = /2,4-D|2 4-d|2, 4-D/gi;
 const REGEX_WAREHOUSE = /wh\s*\d\d\d/gi
 const REGEX_WHITESPACE = /\s/g; 
-
+const REGEX_JRM = /JRM/gi; 
 
 import {spellCheck, cpqSearchString, uniqVals} from 'c/tagHelper';
 export default class ProdSearchTags extends LightningElement {
@@ -150,9 +150,9 @@ export default class ProdSearchTags extends LightningElement {
         async search(){
                 this.whSearch = this.template.querySelector('[data-value="searchInput"]').value.trim().toLowerCase().replace(REGEX_WHITESPACE, "").match(REGEX_WAREHOUSE); 
                 this.stock = this.template.querySelector('[data-value="searchInput"]').value.trim().toLowerCase().match(REGEX_STOCK_RES); 
-                this.searchTerm = this.template.querySelector('[data-value="searchInput"]').value.toLowerCase().replace(REGEX_24D, '2 4-D')
+                this.searchTerm = this.template.querySelector('[data-value="searchInput"]').value.toLowerCase().replace(REGEX_24D, '2 4-D').replace(REGEX_JRM,'')
                 .replace(REGEX_COMMA,' and ').replace(REGEX_SOSL_RESERVED,'?').replace(REGEX_STOCK_RES,'').replace(REGEX_WAREHOUSE, '').trim();
-                if(this.searchTerm.length<3){
+                if(this.searchTerm.length<2){
                     //add lwc alert here
                     return;
                 }
@@ -203,7 +203,7 @@ export default class ProdSearchTags extends LightningElement {
                                     rowVariant: item.Product__r.Temp_Unavailable__c ? 'border-filled' : 'brand',
                                     rowName: item.Product__r.Temp_Unavailable__c ? 'action:freeze_user' : 'action:new',
                                     rowValue: item.Product__r.Temp_Unavailable__c ? 'unavailable' :'Add',
-                                    Name: item.Product__r.Temp_Unavailable__c ? item.Product_Name__c + ' - ' +item.Product__r.Temp_Mess__c : item.Product_Name__c,  
+                                    Name: item.Product__r.Temp_Unavailable__c ? item.Product_Name__c + ' - ' +item.Product__r.Temp_Mess__c : item.Product__r.ERP_Name__c,  
                                     ProductCode: item.Product_Code__c,
                                     Status: item.Stock_Status__c,
                                     Floor_Price__c: item.Floor_Price__c,

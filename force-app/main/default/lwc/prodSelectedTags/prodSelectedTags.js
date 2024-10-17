@@ -302,9 +302,9 @@ priceCheck(){
             this.levelTwoMargin = mess.Level_2_Margin__c ?? 0.00; 
             this.companyLastPaid = mess.Product2.Last_Purchase_Price__c ?? 0.00;
             this.productCode = mess.productCode != undefined ? mess.productCode : mess.Product2.ProductCode;  
-            this.companyLastPaid = mess.lastPaid            
-            this.palletConfig = mess.palletQty;
-            this.sgn = mess.size; 
+            //this.companyLastPaid = mess.lastPaid            
+            this.palletConfig = mess.Product2.Pallet_Qty__c;
+            this.sgn = mess.Product2.SGN__c; 
             this.resUse = mess.rup;
             this.prodFound = true;
         }
@@ -347,8 +347,8 @@ priceCheck(){
                     Ship_Weight__c: this.unitWeight,
                     Description:'',
                     Quantity: 1,
-                    //UnitPrice: this.agency ? this.fPrice: this.levelTwo,
-                    UnitPrice: this.bestPrice.UnitPrice,
+                    UnitPrice: this.agency ? this.fPrice: this.levelTwo,
+                    //UnitPrice: this.bestPrice.UnitPrice,
                     floorPrice: this.fPrice,
                     lOne: this.agency? this.fPrice : this.levelOne,
                     lTwo: this.levelTwo, 
@@ -399,8 +399,8 @@ priceCheck(){
                     Ship_Weight__c: this.unitWeight,
                     Description:'',
                     Quantity: 1,
-                    //UnitPrice: this.agency ? this.fPrice: this.levelTwo,
-                    UnitPrice: this.bestPrice.UnitPrice,
+                    UnitPrice: this.agency ? this.fPrice: this.levelTwo,
+                    //UnitPrice: this.bestPrice.UnitPrice,
                     floorPrice: this.fPrice,
                     lOne: this.agency? this.fPrice : this.levelOne,
                     lTwo: this.levelTwo,
@@ -1240,8 +1240,8 @@ priceCheck(){
             
             
             //IF THERE IS A PROBLEM NEED TO HANDLE THAT STILL!!!
-            //this.selection = await onLoadProducts(mergedLevels, this.recordId); 
-            this.selection = await onLoadProductsOMS(mergedLevels, pricingInfo, this.recordId); 
+            this.selection = await onLoadProducts(mergedLevels, this.recordId); 
+            //this.selection = await onLoadProductsOMS(mergedLevels, pricingInfo, this.recordId); 
             
             //get for ordering
             this.lineOrderNumber = isNaN((this.selection.at(-1).Line_Order__c + 1)) ? (this.selection.length + 1) : (this.selection.at(-1).Line_Order__c + 1);
